@@ -1,0 +1,87 @@
+a {
+    text-decoration: unset !important;
+    color: unset !important;
+}
+.el-sub-menu__title {
+    height: 45px !important;
+    color: white !important;
+    font-weight: 600 !important;
+    font-size: 0.8rem !important;
+    text-transform: uppercase !important;
+}
+.el-sub-menu__title:hover {
+    background-color: unset !important;
+}
+.el-menu--popup {
+    margin-top: 0px !important;
+}
+.el-menu--horizontal .el-menu--popup-bottom-start .el-menu-item:hover {
+    color: black !important;
+}
+.el-popper .el-sub-menu .el-sub-menu__icon-arrow {
+    color: black !important;
+}
+.active svg {
+    color: black !important;
+}
+.bold {
+    font-weight: bold !important;
+}
+.pointer {
+    cursor: pointer;
+}
+.justify {
+    text-align: justify !important;
+}
+.btn-success {
+    color: #ffffff !important;
+    background-color: #1BC5BD !important;
+    border-color: #1BC5BD !important;
+}
+.btn-info {
+    color: #FFFFFF !important;
+    background-color: #6993FF !important;
+    border-color: #6993FF !important;
+}
+.btn-primary {
+    color: #FFFFFF !important;
+    background-color: #8950FC !important;
+    border-color: #8950FC !important;
+}
+.btn-danger {
+    color: #ffffff !important;
+    background-color: #F64E60 !important;
+    border-color: #F64E60 !important;
+}
+.text-success {
+    color: #1BC5BD !important;
+}
+.text-info {
+    color: #6993FF !important;
+}
+.text-primary {
+    color: #8950FC !important;
+}
+.text-danger {
+    color: #F64E60 !important;
+}
+.el-popper.is-customized {
+    /* padding: 6px 12px; */
+    /* background: linear-gradient(90deg, rgb(159, 229, 151), rgb(204, 229, 129)); */
+    background: #692ce5;
+    color: white;
+    font-size: 0.7rem;
+}
+.el-popper.is-customized .el-popper__arrow::before {
+    /* background: linear-gradient(45deg, #b2e68d, #bce689); */
+    background: #692ce5;
+    right: 0;
+}
+.radius-top {
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+}
+.radius-bottom {
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
