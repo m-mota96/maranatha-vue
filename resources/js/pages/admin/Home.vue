@@ -1,15 +1,13 @@
-<script setup>
+<script lang="ts" setup>
 import Layout from './Layout.vue';
 
-const props = defineProps({
-    menu: {
-        type: Array
-    },
-});
+const { menu } = defineProps<{
+    menu: []
+}>();
 </script>
 
 <template>
-    <Layout :menu="props.menu">
+    <Layout :menu="menu">
 
     </Layout>
 </template>

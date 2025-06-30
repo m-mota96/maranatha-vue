@@ -1,34 +1,44 @@
-<script setup>
-import { ref, onMounted } from 'vue';
+<script lang="ts" setup>
+import { ref, onMounted } from 'vue'
 import Menu from './Menu.vue';
 
-const props = defineProps({
-    menu: {
-        type: Array
-    },
-    module: {
-        type: Object,
-        required: false,
-    },
-    dad: {
-        type: String,
-        required: false,
-        default: 'Inicio'
-    }
+interface Module {
+    id: number;
+    name: string;
+    icon?: string;
+    dad?: {
+        name?: string;
+    } | null;
+};
+
+const { menu, dad, module } = withDefaults(defineProps<{
+    menu: [];
+    dad?: string;
+    module?: Module;
+}>(), {
+    dad: 'Inicio',
+    module: () => ({
+        id: 0,
+        name: 'Inicio',
+        icon: '',
+        dad: null
+    })
 });
 
 const currentYear = ref(new Date().getFullYear());
 const title       = ref('Inicio');
 
 onMounted(() => {
-    if (props.module) {
-        title.value = `${props.module.dad.name} - ${props.module.name}`;
+    if (module?.dad?.name) {
+        title.value = `${module.dad.name} - ${module.name}`;
+    } else {
+        title.value = module.name;
     }
 });
 </script>
 
 <template>
-    <Menu :modules="props.menu" :dad="props.dad"></Menu>
+    <Menu :modules="menu" :dad="dad"></Menu>
     <el-row class="pl-3 pr-3">
         <el-col :span="24" class="radius-top  radius-bottom bg-white">
             <el-row>
@@ -56,7 +66,7 @@ onMounted(() => {
 
 <style scoped>
     .content {
-        min-height: 79vh !important;
+        min-height: 78vh !important;
         background-color: #ebedf6 !important;
     }
 </style>

@@ -1,3 +1,7 @@
+.el-menu--horizontal>.el-menu-item.is-active {
+    border-bottom: unset !important;
+    color: white !important;
+}
 a {
     text-decoration: unset !important;
     color: unset !important;
@@ -66,14 +70,11 @@ a {
     color: #F64E60 !important;
 }
 .el-popper.is-customized {
-    /* padding: 6px 12px; */
-    /* background: linear-gradient(90deg, rgb(159, 229, 151), rgb(204, 229, 129)); */
     background: #692ce5;
     color: white;
     font-size: 0.7rem;
 }
 .el-popper.is-customized .el-popper__arrow::before {
-    /* background: linear-gradient(45deg, #b2e68d, #bce689); */
     background: #692ce5;
     right: 0;
 }

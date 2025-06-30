@@ -1,17 +1,22 @@
-<script setup>
+<script lang="ts" setup>
 import { ref, onMounted } from 'vue';
 import Layout from './Layout.vue';
 import apiClient from '@/apiClient';
+import { showNotification } from '@/notification';
 
-const props = defineProps({
-    module: {
-        type: Object,
-        required: true
-    },
-    menu: {
-        type: Array
+interface Module {
+    id: number;
+    name: string;
+    icon?: string;
+    dad: {
+        name: string;
     }
-});
+}
+
+const { menu, module } = defineProps<{
+    menu: [],
+    module: Module
+}>();
 
 const modules = ref([]);
 
@@ -20,16 +25,17 @@ onMounted(() => {
 });
 
 const getModules = async () => {
-    const response = await apiClient('admin/modules', 'GET', null);
+    const response = await apiClient('admin/modules');
     if (response.error) {
-
+        showNotification(response.msj, '¡Error!', 'error');
+        return
     }
     modules.value = response.data;
 };
 </script>
 
 <template>
-    <Layout :menu="props.menu" :module="props.module" :dad="props.module.dad.name">
+    <Layout :menu="menu" :module="module" :dad="module.dad.name">
         <el-table :data="modules" stripe empty-text="Ningún dato disponible en esta tabla" header-cell-class-name="text-dark bold">
             <el-table-column prop="id" label="#" width="70" align="center" />
             <el-table-column label="Padre">
@@ -48,7 +54,7 @@ const getModules = async () => {
                     <span class="text-danger bold" v-if="scope.row.status == 0">Inactivo</span>
                 </template>
             </el-table-column>
-            <!-- <el-table-column align="center">
+            <el-table-column align="center">
                 <template #header>
                     <el-tooltip content="Nuevo módulo" effect="customized" placement="top">
                         <el-button class="btn-success ps-2 pe-2">
@@ -56,21 +62,21 @@ const getModules = async () => {
                         </el-button>
                     </el-tooltip>
                 </template>
-                <template #default="scope">
+                <!-- <template #default="scope">
                     <el-button-group>
                         <el-tooltip content="Editar módulo" effect="customized" placement="top">
-                            <el-button class="btn-success ps-2 pe-2" :icon="Edit">
+                            <el-button class="btn-success ps-2 pe-2">
                                 <font-awesome-icon :icon="['fas', 'pen']" />
                             </el-button>
                         </el-tooltip>
                         <el-tooltip content="Desactivar módulo" effect="customized" placement="top">
-                            <el-button class="btn-danger ps-2 pe-2" :icon="Share">
+                            <el-button class="btn-danger ps-2 pe-2">
                                 <font-awesome-icon :icon="['fas', 'eye']" />
                             </el-button>
                         </el-tooltip>
                     </el-button-group>
-                </template>
-            </el-table-column> -->
+                </template> -->
+            </el-table-column>
         </el-table>
     </Layout>
 </template>

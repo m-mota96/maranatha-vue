@@ -17,7 +17,7 @@ class ModuleSeeder extends Seeder
             'module_id' => null,
             'name' => 'Configuración',
             'target' => null,
-            'icon' => 'fa-solid fa-gear',
+            'icon' => 'fas, gear',
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
         ];
