@@ -50,6 +50,14 @@ class LoginRequest extends FormRequest
         }
 
         RateLimiter::clear($this->throttleKey());
+
+        // Verifica si el usuario está activo
+        if (!auth()->user()->active) {
+            Auth::logout();
+            throw ValidationException::withMessages([
+                'email' => 'Tu cuenta está inactiva. Contacta al administrador.',
+            ]);
+        }
     }
 
     /**

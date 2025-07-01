@@ -86,3 +86,9 @@ a {
     border-bottom-left-radius: 5px;
     border-bottom-right-radius: 5px;
 }
+.fs-small {
+    font-size: 0.8rem !important;
+}
+.el-form-item {
+    margin-bottom: 0px !important;
+}

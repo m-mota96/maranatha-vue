@@ -27,7 +27,62 @@ class ModuleController extends Controller {
             $modules = Module::with(['dad'])->get();
             return Response::response(null, $modules);
         } catch (\Throwable $th) {
-            return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacte a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
+            return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
+        }
+    }
+
+    public function parentModules(Request $request) {
+        try {
+            $modules = Modules::modulesNewMenu();
+            return Response::response(null, $modules);
+        } catch (\Throwable $th) {
+            return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
+        }
+    }
+
+    public function saveMenu(Request $request) {
+        try {
+            $module = Module::where('name', $request->name)->orWhere('target', $request->target)->first();
+            if ($module) {
+                return Response::response(
+                    'Ya existe un módulo con el mismo nombre o url.<br>Por favor intenta con otro nombre o url.',
+                    null,
+                    true,
+                    409
+                );
+            }
+            Module::create([
+                'module_id'   => $request->module_id,
+                'name'        => $request->name,
+                'icon'        => $request->icon,
+                'target'      => $request->target,
+                'class'       => $request->class,
+                'description' => $request->description
+            ]);
+            return Response::response('El módulo se guardo correctamente.');
+        } catch (\Throwable $th) {
+            return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
+        }
+    }
+
+    public function editMenu(Request $request) {
+        try {
+            $txt                 = 'modificó';
+            $module              = Module::find($request->id);
+            $module->module_id   = $request->module_id;
+            $module->name        = $request->name;
+            $module->icon        = $request->icon;
+            $module->target      = $request->target;
+            $module->class       = $request->class;
+            $module->description = $request->description;
+            if ($request->status === 0 || $request->status === 1) {
+                $module->status = $request->status;
+                $txt            = $request->status === 1 ? 'activo' : 'desactivo';
+            }
+            $module->save();
+            return Response::response('El módulo se '.$txt.' correctamente.');
+        } catch (\Throwable $th) {
+            return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
         }
     }
 }

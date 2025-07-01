@@ -1,28 +1,24 @@
-<script lang="ts" setup>
-import { ref, onMounted } from 'vue'
+<script lang="js" setup>
+import { ref, onMounted } from 'vue';
 import Menu from './Menu.vue';
 
-interface Module {
-    id: number;
-    name: string;
-    icon?: string;
-    dad?: {
-        name?: string;
-    } | null;
-};
-
-const { menu, dad, module } = withDefaults(defineProps<{
-    menu: [];
-    dad?: string;
-    module?: Module;
-}>(), {
-    dad: 'Inicio',
-    module: () => ({
-        id: 0,
-        name: 'Inicio',
-        icon: '',
-        dad: null
-    })
+const { menu, dad, module } = defineProps({
+    menu: {
+        type: Array,
+        required: true
+    },
+    dad: {
+        type: String,
+        required: false,
+        default: 'Inicio'
+    },
+    module: {
+        type: Object,
+        required: false,
+        default: {
+            name: 'Inicio'
+        }
+    }
 });
 
 const currentYear = ref(new Date().getFullYear());

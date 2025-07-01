@@ -1,33 +1,20 @@
-<script lang="ts" setup>
+<script lang="js" setup>
 import { computed  } from 'vue';
 import { usePage, Link, router } from '@inertiajs/vue3';
-
-interface Module {
-    name: string;
-    icon?: string;
-    target: string;
-    submodules: [{
-        name: string;
-        target: string;
-        submodules: [{
-            name: string;
-            target: string;
-        }];
-    }];
-    [key: string]: any;
-};
 
 const page = usePage();
 const user = page.props.auth.user;
 
-const { dad, modules } = defineProps<{
-    dad: string;
-    modules: Module[];
-}>();
-
-const handleLogout = () => {
-    router.flushAll();
-};
+const { dad, modules } = defineProps({
+    dad: {
+        type: String,
+        required: true
+    },
+    modules: {
+        type: Array,
+        required: true
+    }
+});
 
 const formattedModules = computed(() =>
     modules.map(m => ({
@@ -78,7 +65,7 @@ const formattedModules = computed(() =>
             <el-menu-item class="none-item pb-2" index="999">
                 <el-tooltip content="Cerrar sesión" effect="customized">
                     <div class="ps-3 pe-3 radius-top radius-bottom">
-                        <Link class="block w-full" method="post" :href="route('logout')" @click="handleLogout" as="button">
+                        <Link class="block w-full" method="post" :href="route('logout')" as="button">
                             <h3>
                                 <font-awesome-icon :icon="['fas', 'arrow-right-from-bracket']" />
                             </h3>

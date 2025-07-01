@@ -31,7 +31,7 @@ const apiClient = async (
       error: true,
       msj:
         error?.response?.data?.msj ||
-        'Lo sentimos, ocurrió un error.<br>Si el problema persiste contacte al organizador del evento',
+        'Lo sentimos, ocurrió un error.<br>Si el problema persiste contacta a soporte.',
       data: error?.response?.data?.data || 'Error fatal'
     };
   }
