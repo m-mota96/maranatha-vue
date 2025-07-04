@@ -16,7 +16,9 @@ const { menu, dad, module } = defineProps({
         type: Object,
         required: false,
         default: {
-            name: 'Inicio'
+            dad: {
+                name: 'Inicio'
+            }
         }
     }
 });
@@ -25,6 +27,7 @@ const currentYear = ref(new Date().getFullYear());
 const title       = ref('Inicio');
 
 onMounted(() => {
+    console.log(module);
     if (module?.dad?.name) {
         title.value = `${module.dad.name} - ${module.name}`;
     } else {
@@ -34,12 +37,12 @@ onMounted(() => {
 </script>
 
 <template>
-    <Menu :modules="menu" :dad="dad"></Menu>
+    <Menu :modules="menu" :dad="module.dad"></Menu>
     <el-row class="pl-3 pr-3">
         <el-col :span="24" class="radius-top  radius-bottom bg-white">
             <el-row>
                 <el-col :span="24" class="pt-3 pb-3 ps-4 pe-4">
-                    <h4>{{ title }}</h4>
+                    <h4>{{ module.dad.name }}</h4>
                 </el-col>
                 <el-col :span="24" class="content radius-bottom p-3">
                     <el-row class="bg-white radius-top radius-bottom p-3" style="height: 100%;">

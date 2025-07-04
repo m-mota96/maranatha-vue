@@ -92,3 +92,6 @@ a {
 .el-form-item {
     margin-bottom: 0px !important;
 }
+.el-checkbox {
+    --el-checkbox-checked-text-color: unset !important;
+}

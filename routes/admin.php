@@ -4,6 +4,8 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\ModulePermissionController;
+use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\UserPermissionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('administrador')->name('administrador.')->middleware(['auth', 'role:admin'])->group(function() {
@@ -22,9 +24,13 @@ Route::prefix('administrador')->name('administrador.')->middleware(['auth', 'rol
 Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function() {
     Route::get('modules', [ModuleController::class, 'getModules']);
     Route::get('parentModules', [ModuleController::class, 'parentModules']);
+    Route::get('modulesMenu', [ModuleController::class, 'modulesMenu']);
+    Route::get('allModulesMenu', [ModuleController::class, 'allModulesMenu']);
+    Route::get('userModules/userId', [ModuleController::class, 'userModules']);
     Route::post('module', [ModuleController::class, 'saveMenu']);
     Route::put('module', [ModuleController::class, 'editMenu']);
     Route::get('users', [AdminUserController::class, 'getUsers']);
     Route::post('user', [AdminUserController::class, 'saveUser']);
     Route::put('user', [AdminUserController::class, 'editUser']);
+    Route::post('permissionUser', [UserPermissionController::class, 'permissionUser']);
 });

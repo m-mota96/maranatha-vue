@@ -3,7 +3,7 @@ import { onMounted, ref } from 'vue';
 import Layout from './Layout.vue';
 import apiClient from '@/apiClient';
 import { showNotification } from '@/notification';
-import CreateEditUser from './modals/CreateEditUser.vue';
+import EditUserPermission from './modals/EditUserPermission.vue';
 
 const { module, menu } = defineProps({
     module: {
@@ -17,7 +17,7 @@ const { module, menu } = defineProps({
 });
 
 const users = ref([]);
-const createEditUserRef = ref(null);
+const editUserPermissionRef = ref(null);
 
 onMounted(() => {
     getUsers();
@@ -32,18 +32,8 @@ const getUsers = async () => {
     users.value = response.data;
 };
 
-const openModal = (data = null) => {
-    createEditUserRef.value?.showModal(data);
-};
-
-const statusUser = async (user) => {
-    user.active = user.active === 1 ? 0 : 1;
-    const response = await apiClient('admin/user', 'PUT', user);
-    if (response.error) {
-        showNotification(response.msj, '¡Error!', 'error');
-        return
-    }
-    showNotification(response.msj);
+const openModal = (userId, permissions) => {
+    editUserPermissionRef.value?.showModal(userId, permissions);
 };
 </script>
 
@@ -59,28 +49,12 @@ const statusUser = async (user) => {
                     <span class="text-danger bold" v-if="scope.row.active == 0">Inactivo</span>
                 </template>
             </el-table-column>
-            <el-table-column width="150" align="center">
-                <template #header>
-                    <el-tooltip content="Nuevo usuario" effect="customized" placement="top">
-                        <el-button class="btn-success ps-2 pe-2" @click="openModal()">
-                            <font-awesome-icon :icon="['fas', 'plus']" />
-                        </el-button>
-                    </el-tooltip>
-                </template>
+            <el-table-column label="Acciones" width="150" align="center">
                 <template #default="scope">
                     <el-button-group>
-                        <el-tooltip content="Editar usuario" effect="customized" placement="top">
-                            <el-button class="btn-success ps-2 pe-2" @click="openModal(scope.row)">
+                        <el-tooltip content="Editar permisos" effect="customized" placement="top">
+                            <el-button class="btn-success ps-2 pe-2" @click="openModal(scope.row.id, scope.row.modules)">
                                 <font-awesome-icon :icon="['fas', 'pen']" />
-                            </el-button>
-                        </el-tooltip>
-                        <el-tooltip :content="scope.row.active ? 'Desactivar usuario' : 'Activar usuario'" effect="customized" placement="top">
-                            <el-button
-                                :class="{'btn-danger': scope.row.active, 'btn-info': !scope.row.active}"
-                                class="ps-2 pe-2"
-                                @click="statusUser(scope.row)"
-                            >
-                                <font-awesome-icon :icon="['fas', 'eye']" />
                             </el-button>
                         </el-tooltip>
                     </el-button-group>
@@ -88,7 +62,7 @@ const statusUser = async (user) => {
             </el-table-column>
         </el-table>
     </Layout>
-    <CreateEditUser ref="createEditUserRef" :get-parent-users="getUsers" />
+    <EditUserPermission ref="editUserPermissionRef" :get-parent-users="getUsers" />
 </template>
 
 <style scoped>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
@@ -25,7 +26,9 @@ class AdminUserController extends Controller {
 
     public function getUsers(Request $request) {
         try {
-            $users = User::where('email', '<>', 'miguel.mota.murillo@gmail.com')->get();
+            $users = User::with(['modules'])
+            // ->where('email', '<>', 'miguel.mota.murillo@gmail.com')
+            ->get();
             return Response::response(null, $users);
         } catch (\Throwable $th) {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);

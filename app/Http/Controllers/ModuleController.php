@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Http\Traits\Modules;
@@ -24,7 +25,7 @@ class ModuleController extends Controller {
 
     public function getModules(Request $request) {
         try {
-            $modules = Module::with(['dad'])->get();
+            $modules = Modules::allModules();
             return Response::response(null, $modules);
         } catch (\Throwable $th) {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
@@ -40,19 +41,46 @@ class ModuleController extends Controller {
         }
     }
 
+    public function modulesMenu(Request $request) {
+        try {
+            $modules = Modules::modulesMenu();
+            return Response::response(null, $modules);
+        } catch (\Throwable $th) {
+            return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
+        }
+    }
+
+    public function allModulesMenu(Request $request) {
+        try {
+            $modules = Modules::allModulesMenu();
+            return Response::response(null, $modules);
+        } catch (\Throwable $th) {
+            return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
+        }
+    }
+
+    public function userModules($userId) {
+        try {
+            $modules = Modules::userModules($userId);
+            return Response::response(null, $modules);
+        } catch (\Throwable $th) {
+            return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
+        }
+    }
+
     public function saveMenu(Request $request) {
         try {
-            $module = Module::where('name', $request->name)->orWhere('target', $request->target)->first();
-            if ($module) {
-                return Response::response(
-                    'Ya existe un módulo con el mismo nombre o url.<br>Por favor intenta con otro nombre o url.',
-                    null,
-                    true,
-                    409
-                );
-            }
+            // $module = Module::where('name', $request->name)->orWhere('target', $request->target)->first();
+            // if ($module) {
+            //     return Response::response(
+            //         'Ya existe un módulo con el mismo nombre o url.<br>Por favor intenta con otro nombre o url.',
+            //         null,
+            //         true,
+            //         409
+            //     );
+            // }
             Module::create([
-                'module_id'   => $request->module_id,
+                'module_id'   => $request->menu_id ? $request->menu_id : null,
                 'name'        => $request->name,
                 'icon'        => $request->icon,
                 'target'      => $request->target,
@@ -69,7 +97,7 @@ class ModuleController extends Controller {
         try {
             $txt                 = 'modificó';
             $module              = Module::find($request->id);
-            $module->module_id   = $request->module_id;
+            $module->module_id   = $request->menu_id ? $request->menu_id : null;
             $module->name        = $request->name;
             $module->icon        = $request->icon;
             $module->target      = $request->target;
