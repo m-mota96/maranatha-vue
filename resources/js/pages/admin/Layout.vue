@@ -25,24 +25,29 @@ const { menu, dad, module } = defineProps({
 
 const currentYear = ref(new Date().getFullYear());
 const title       = ref('Inicio');
+const dadName     = ref('');
 
 onMounted(() => {
-    console.log(module);
     if (module?.dad?.name) {
         title.value = `${module.dad.name} - ${module.name}`;
     } else {
-        title.value = module.name;
+        title.value = module.dad.name;
+    }
+    if (module?.dad?.dad?.name) {
+        dadName.value = module.dad.dad.name;
+    } else {
+        dadName.value = module.dad.name;
     }
 });
 </script>
 
 <template>
-    <Menu :modules="menu" :dad="module.dad"></Menu>
+    <Menu :modules="menu" :dad="dadName"></Menu>
     <el-row class="pl-3 pr-3">
         <el-col :span="24" class="radius-top  radius-bottom bg-white">
             <el-row>
                 <el-col :span="24" class="pt-3 pb-3 ps-4 pe-4">
-                    <h4>{{ module.dad.name }}</h4>
+                    <h4>{{ title }}</h4>
                 </el-col>
                 <el-col :span="24" class="content radius-bottom p-3">
                     <el-row class="bg-white radius-top radius-bottom p-3" style="height: 100%;">

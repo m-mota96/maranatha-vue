@@ -3,9 +3,9 @@ import { ref, onMounted } from 'vue';
 import Layout from './Layout.vue';
 import apiClient from '@/apiClient';
 import { showNotification } from '@/notification';
-import CreateEditService from './modals/CreateEditService.vue';
+import CreateEditStaff from './modals/CreateEditStaff.vue';
 
-const { module, menu, serviceType } = defineProps({
+const { module, menu, positions, services } = defineProps({
     module: {
         type: Object,
         required: true
@@ -14,24 +14,30 @@ const { module, menu, serviceType } = defineProps({
         type: Array,
         required: true
     },
-    serviceType: {
+    positions: {
+        type: Array,
+        required: true
+    },
+    services: {
         type: Array,
         required: true
     }
 });
 
-const createEditServiceRef = ref(null);
-const services             = ref([]);
+const createEditStaffRef = ref(null);
+const staff             = ref([]);
 const pagination           = ref({
     currentPage: 1,
     pageSize: 10,
     total: 0
 });
 const search = ref({
-    service_type_id: 0,
+    position_id: 0,
     name: '',
-    price: '',
-    discounted_price: '',
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
     status: 'all'
 });
 const order = ref({
@@ -40,22 +46,22 @@ const order = ref({
 });
 
 onMounted(() => {
-    getServices();
+    getStaff();
 });
 
-const getServices = async () => {
-    const response = await apiClient('admin/services', 'GET', {pagination: pagination.value, search: search.value, order: order.value});
+const getStaff = async () => {
+    const response = await apiClient('admin/staff', 'GET', {pagination: pagination.value, search: search.value, order: order.value});
     if (response.error) {
         showNotification(response.msj, '¡Error!', 'error', 7500);
         return
     }
-    services.value = response.data.services;
+    staff.value = response.data.staff;
     pagination.value.total = response.data.totalRows;
 };
 
-const statusService = async (_service) => {
-    _service.status = _service.status === 1 ? 0 : 1;
-    const response = await apiClient('admin/service', 'PUT', _service);
+const statusStaff = async (_staff) => {
+    _staff.status = _staff.status === 1 ? 0 : 1;
+    const response = await apiClient('admin/staff', 'PUT', _staff);
     if (response.error) {
         showNotification(response.msj, '¡Error!', 'error');
         return
@@ -63,29 +69,31 @@ const statusService = async (_service) => {
     showNotification(response.msj);
 };
 
-const deleteService = async (id) => {
-    const response = await apiClient(`admin/service/${id}`, 'DELETE');
+const deleteStaff = async (id) => {
+    const response = await apiClient(`admin/staff/${id}`, 'DELETE');
     if (response.error) {
         showNotification(response.msj, '¡Error!', 'error');
         return
     }
-    getServices();
+    getStaff();
     showNotification(response.msj);
 };
 
 const openModal = (data = null) => {
-    createEditServiceRef.value?.showModal(data);
+    createEditStaffRef.value?.showModal(data);
 };
 
 const resetFilters = () => {
     search.value.service_type_id  = 0;
     search.value.name             = '';
-    search.value.price            = '';
-    search.value.discounted_price = '';
+    search.value.first_name       = '';
+    search.value.last_name        = '';
+    search.value.email            = '';
+    search.value.phone            = '';
     search.value.status           = 'all';
     order.value.orderBy           = 'id';
     order.value.order             = 'DESC';
-    getServices();
+    getStaff();
 }
 
 const formatCurrency = (value) => {
@@ -96,10 +104,10 @@ const formatCurrency = (value) => {
 };
 
 const handleSizeChange = (val) => {
-    getServices();
+    getStaff();
 }
 const handleCurrentChange = (val) => {
-    getServices();
+    getStaff();
 }
 </script>
 
@@ -107,19 +115,21 @@ const handleCurrentChange = (val) => {
     <Layout :menu="menu" :module="module">
         <el-col class="mb-2" :span="4" :offset="15">
             <label for="order">Ordernar por</label>
-            <el-select v-model="order.orderBy" @change="getServices" id="order">
+            <el-select v-model="order.orderBy" @change="getStaff" id="order">
                 <el-option :key="0" label="Id" value="id" />
-                <el-option :key="1" label="Tipo de servicio" value="service_type_id" />
-                <el-option :key="2" label="Servicio" value="name" />
-                <el-option :key="3" label="Precio" value="price" />
-                <el-option :key="4" label="Precio especial" value="discounted_price" />
-                <el-option :key="5" label="Duración del servicio" value="time" />
+                <el-option :key="1" label="Puesto" value="position_id" />
+                <el-option :key="2" label="Nombre" value="name" />
+                <el-option :key="2" label="Apellido paterno" value="first_name" />
+                <el-option :key="2" label="Apellido materno" value="last_name" />
+                <el-option :key="3" label="Correo electrónico" value="email" />
+                <el-option :key="4" label="Teléfono" value="phone" />
                 <el-option :key="6" label="Estatus" value="status" />
+                <el-option :key="6" label="Comisión" value="commission" />
             </el-select>
         </el-col>
         <el-col class="mb-2 ps-3" :span="4">
             <br>
-            <el-select v-model="order.order" @change="getServices">
+            <el-select v-model="order.order" @change="getStaff">
                 <el-option :key="0" label="Ascendente" value="ASC" />
                 <el-option :key="1" label="Descendente" value="DESC" />
             </el-select>
@@ -136,51 +146,52 @@ const handleCurrentChange = (val) => {
             </el-tooltip>
         </el-col>
         <el-col :span="24" class="table-wrapper">
-            <el-table :data="services" stripe empty-text="Ningún dato disponible en esta tabla" header-cell-class-name="text-dark bold">
+            <el-table :data="staff" stripe empty-text="Ningún dato disponible en esta tabla" header-cell-class-name="text-dark bold">
                 <el-table-column prop="id" label="#" width="70" align="center" />
-                <el-table-column prop="service_type.name">
+                <el-table-column prop="position.name">
                     <template #header>
-                        <el-select placeholder="Tipo de servicio" v-model="search.service_type_id" @change="getServices">
-                            <el-option :value="0" label="Tipo de servicio" />
+                        <el-select placeholder="Puesto" v-model="search.position_id" @change="getStaff">
+                            <el-option :value="0" label="Puesto" />
                             <el-option
-                                v-for="s in serviceType"
-                                :key="s.id"
-                                :value="s.id"
-                                :label="s.name"
+                                v-for="p in positions"
+                                :key="p.id"
+                                :value="p.id"
+                                :label="p.name"
                             />
                         </el-select>
                     </template>
                 </el-table-column>
                 <el-table-column prop="name">
                     <template #header>
-                        <el-input placeholder="Servicio" title="Escribe para buscar" v-model="search.name" @input="getServices" clearable />
+                        <el-input placeholder="Nombre" title="Escribe para buscar" v-model="search.name" @input="getStaff" clearable />
                     </template>
                 </el-table-column>
+                <el-table-column prop="first_name">
+                    <template #header>
+                        <el-input placeholder="Apellido paterno" title="Escribe para buscar" v-model="search.first_name" @input="getStaff" clearable />
+                    </template>
+                </el-table-column>
+                <el-table-column prop="last_name">
+                    <template #header>
+                        <el-input placeholder="Apellido materno" title="Escribe para buscar" v-model="search.last_name" @input="getStaff" clearable />
+                    </template>
+                </el-table-column>
+                <el-table-column prop="email">
+                    <template #header>
+                        <el-input placeholder="Correo electrónico" title="Escribe para buscar" v-model="search.email" @input="getStaff" clearable />
+                    </template>
+                </el-table-column>
+                <el-table-column prop="phone">
+                    <template #header>
+                        <el-input placeholder="Teléfono" title="Escribe para buscar" v-model="search.phone" @input="getStaff" clearable />
+                    </template>
+                </el-table-column>
+                <el-table-column prop="curp" label="Curp" />
+                <el-table-column prop="rfc" label="Rfc" />
+                <el-table-column prop="commission" label="Comisión" />
                 <el-table-column align="center" width="150">
                     <template #header>
-                        <el-input placeholder="Precio" title="Escribe para buscar" v-model="search.price" @input="getServices" clearable />
-                    </template>
-                    <template #default="scope">
-                        {{ formatCurrency(scope.row.price) }}
-                    </template>
-                </el-table-column>
-                <el-table-column align="center" width="150">
-                    <template #header>
-                        <el-input placeholder="Precio especial" title="Escribe para buscar" v-model="search.discounted_price" @input="getServices" clearable />
-                    </template>
-                    <template #default="scope">
-                        {{ formatCurrency(scope.row.discounted_price) }}
-                    </template>
-                </el-table-column>
-                <el-table-column label="Duración del servicio">
-                    <template #default="scope">
-                        <span v-if="(scope.row.time % 60) !== 0">{{ scope.row.time }} minutos</span>
-                        <span v-if="(scope.row.time % 60) === 0">{{ scope.row.time / 60 }} {{ (scope.row.time / 60) === 1 ? 'hora' : 'horas' }}</span>
-                    </template>
-                </el-table-column>
-                <el-table-column align="center" width="150">
-                    <template #header>
-                        <el-select placeholder="Estatus" v-model="search.status" @change="getServices">
+                        <el-select placeholder="Estatus" v-model="search.status" @change="getStaff">
                             <el-option value="all" label="Estatus" />
                             <el-option :value="1" label="Activo" />
                             <el-option :value="0" label="Inactivo" />
@@ -193,7 +204,7 @@ const handleCurrentChange = (val) => {
                 </el-table-column>
                 <el-table-column width="150" align="center">
                     <template #header>
-                        <el-tooltip content="Nuevo servicio" effect="customized" placement="top">
+                        <el-tooltip content="Nuevo staff" effect="customized" placement="top">
                             <el-button class="btn-success ps-2 pe-2" @click="openModal()">
                                 <font-awesome-icon :icon="['fas', 'plus']" />
                             </el-button>
@@ -201,12 +212,12 @@ const handleCurrentChange = (val) => {
                     </template>
                     <template #default="scope">
                         <el-button-group>
-                            <el-tooltip content="Editar servicio" effect="customized" placement="top">
+                            <el-tooltip content="Editar staff" effect="customized" placement="top">
                                 <el-button class="btn-success ps-2 pe-2" @click="openModal(scope.row)">
                                     <font-awesome-icon :icon="['fas', 'pen']" />
                                 </el-button>
                             </el-tooltip>
-                            <el-tooltip :content="scope.row.status ? 'Desactivar servicio' : 'Activar servicio'" effect="customized" placement="top">
+                            <el-tooltip :content="scope.row.status ? 'Desactivar staff' : 'Activar staff'" effect="customized" placement="top">
                                 <el-button
                                     :class="{'btn-warning': scope.row.status, 'btn-info': !scope.row.status}"
                                     class="ps-2 pe-2"
@@ -223,13 +234,13 @@ const handleCurrentChange = (val) => {
                                 confirm-button-type="danger"
                                 cancel-button-type="primary"
                                 :width="200"
-                                title="¿Seguro que deseas eliminar este servicio?"
+                                title="¿Seguro que deseas eliminar este staff?"
                                 placement="left"
                                 @confirm="deleteService(scope.row.id)"
                             >
                                 <template #reference>
                                     <span>
-                                        <el-tooltip content="Eliminar servicio" effect="customized" placement="top">
+                                        <el-tooltip content="Eliminar staff" effect="customized" placement="top">
                                             <el-button class="btn-danger ps-2 pe-2" style="border-top-left-radius: 0px; border-bottom-left-radius: 0px;">
                                                 <font-awesome-icon :icon="['fas', 'trash-can']" />
                                             </el-button>
@@ -253,7 +264,7 @@ const handleCurrentChange = (val) => {
             />
         </el-col>
     </Layout>
-    <CreateEditService ref="createEditServiceRef" :get-parent-services="getServices" :serviceType="serviceType" />
+    <CreateEditStaff ref="createEditStaffRef" :get-parent-staff="getStaff" :positions="positions" :services="services" />
 </template>
 
 <style scoped>

@@ -5,6 +5,7 @@ use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\ModulePermissionController;
 use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\StaffController;
 use App\Http\Controllers\UserPermissionController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,4 +34,13 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function() {
     Route::post('user', [AdminUserController::class, 'saveUser']);
     Route::put('user', [AdminUserController::class, 'editUser']);
     Route::post('permissionUser', [UserPermissionController::class, 'permissionUser']);
+    Route::get('services', [ServiceController::class, 'getServices']);
+    Route::post('service', [ServiceController::class, 'saveService']);
+    Route::put('service', [ServiceController::class, 'editService']);
+    Route::delete('service/{id}', [ServiceController::class, 'deleteService']);
+    Route::get('staff', [StaffController::class, 'getStaff']);
+    Route::post('staff', [StaffController::class, 'saveStaff']);
+    Route::put('staff', [StaffController::class, 'editStaff']);
+    Route::delete('staff/{id}', [StaffController::class, 'deleteStaff']);
+    Route::post('staffAndFile', [StaffController::class, 'staffAndFile']);
 });

@@ -57,6 +57,16 @@ a {
     background-color: #F64E60 !important;
     border-color: #F64E60 !important;
 }
+.btn-warning {
+    color: #212529;
+    background-color: #ffc107;
+    border-color: #ffc107;
+}
+.btn-warning:hover {
+    color: #212529;
+    background-color: #ffc107;
+    border-color: #ffc107;
+}
 .text-success {
     color: #1BC5BD !important;
 }
