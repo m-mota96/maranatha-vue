@@ -4,6 +4,7 @@ import Layout from './Layout.vue';
 import apiClient from '@/apiClient';
 import { showNotification } from '@/notification';
 import CreateEditStaff from './modals/CreateEditStaff.vue';
+import StaffSchedules from './modals/StaffSchedules.vue';
 
 const { module, menu, positions, services } = defineProps({
     module: {
@@ -24,6 +25,7 @@ const { module, menu, positions, services } = defineProps({
     }
 });
 
+const staffSchedulesRef   = ref(null);
 const createEditStaffRef = ref(null);
 const staff             = ref([]);
 const pagination           = ref({
@@ -61,7 +63,7 @@ const getStaff = async () => {
 
 const statusStaff = async (_staff) => {
     _staff.status = _staff.status === 1 ? 0 : 1;
-    const response = await apiClient('admin/staff', 'PUT', _staff);
+    const response = await apiClient('admin/staff', 'PUT', {id: _staff.id, status: _staff.status});
     if (response.error) {
         showNotification(response.msj, '¡Error!', 'error');
         return
@@ -81,6 +83,10 @@ const deleteStaff = async (id) => {
 
 const openModal = (data = null) => {
     createEditStaffRef.value?.showModal(data);
+};
+
+const openModalSchedule = (id,name, schedule) => {
+    staffSchedulesRef.value?.showModal(id, name, schedule);
 };
 
 const resetFilters = () => {
@@ -202,7 +208,7 @@ const handleCurrentChange = (val) => {
                         <span class="text-danger bold" v-if="scope.row.status == 0">Inactivo</span>
                     </template>
                 </el-table-column>
-                <el-table-column width="150" align="center">
+                <el-table-column width="200" align="center">
                     <template #header>
                         <el-tooltip content="Nuevo staff" effect="customized" placement="top">
                             <el-button class="btn-success ps-2 pe-2" @click="openModal()">
@@ -217,11 +223,20 @@ const handleCurrentChange = (val) => {
                                     <font-awesome-icon :icon="['fas', 'pen']" />
                                 </el-button>
                             </el-tooltip>
+                            <el-tooltip content="Editar horarios" effect="customized" placement="top" v-if="scope.row.services.length">
+                                <el-button
+                                    type="primary"
+                                    class="ps-2 pe-2"
+                                    @click="openModalSchedule(scope.row.id, `${scope.row.name} ${scope.row.first_name} ${scope.row.last_name}`, scope.row.schedules)"
+                                >
+                                    <font-awesome-icon :icon="['far', 'clock']" />
+                                </el-button>
+                            </el-tooltip>
                             <el-tooltip :content="scope.row.status ? 'Desactivar staff' : 'Activar staff'" effect="customized" placement="top">
                                 <el-button
                                     :class="{'btn-warning': scope.row.status, 'btn-info': !scope.row.status}"
                                     class="ps-2 pe-2"
-                                    @click="statusService(scope.row)"
+                                    @click="statusStaff(scope.row)"
                                 >
                                     <font-awesome-icon :icon="['fas', 'eye']" />
                                 </el-button>
@@ -236,7 +251,7 @@ const handleCurrentChange = (val) => {
                                 :width="200"
                                 title="¿Seguro que deseas eliminar este staff?"
                                 placement="left"
-                                @confirm="deleteService(scope.row.id)"
+                                @confirm="deleteStaff(scope.row.id)"
                             >
                                 <template #reference>
                                     <span>
@@ -265,6 +280,7 @@ const handleCurrentChange = (val) => {
         </el-col>
     </Layout>
     <CreateEditStaff ref="createEditStaffRef" :get-parent-staff="getStaff" :positions="positions" :services="services" />
+    <StaffSchedules ref="staffSchedulesRef" :get-parent-satff="getStaff"/>
 </template>
 
 <style scoped>

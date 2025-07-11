@@ -64,44 +64,79 @@ class StaffController extends Controller {
 
     public function saveStaff(Request $request) {
         try {
-            Staff::create([
-                'position_id' => $request->position_id,
-                'name'        => $request->name,
-                'first_name'  => $request->first_name,
-                'last_name'   => $request->last_name,
-                'birthdate'   => $request->birthdate,
-                'curp'        => $request->curp,
-                'rfc'         => $request->rfc,
-                'email'       => $request->email,
-                'phone'       => $request->phone,
-                'commission'  => $request->commission,
-                'created_by'  => auth()->user()->id
-                // 'image_profile' => $request->image_profile,
+            $request->validate([
+                'file' => 'nullable|file|mimes:jpg,jpeg,png|max:1024', // tamaño en kilobytes (1024 KB = 1 MB)
+            ], [
+                'file.mimes' => 'Por favor elige una imagen en formato jpg, jpeg o png.',
+                'file.max'   => 'La imagen debe mesar 1MB o menos.'
             ]);
-            return Response::response('El staff se guardo correctamente.');
+
+            $reqStaff    = json_decode($request->staff, true);
+            $reqServices = json_decode($request->services, true);
+            $services    = [];
+            foreach ($reqServices as $s) {
+                if ($s['val']) $services[] = $s['id'];
+            }
+
+            $fileName = null;
+            if ($request->file) {
+                $file            = $request->file;
+                $extension       = $file->getClientOriginalExtension();
+                $fileName        = uniqid().'.'.$extension;
+                $destinationPath = public_path('staff');
+                // Crear carpeta si no existe
+                if (!file_exists($destinationPath)) {
+                    mkdir($destinationPath, 0755, true);
+                }
+                // Guardar el archivo
+                $file->move($destinationPath, $fileName);
+            }
+
+            if ($reqStaff['id'] === null) {
+                $txt   = 'guardo';
+                $staff = Staff::create([
+                    'position_id'   => $reqStaff['position_id'],
+                    'name'          => $reqStaff['name'],
+                    'first_name'    => $reqStaff['first_name'],
+                    'last_name'     => $reqStaff['last_name'],
+                    'birthdate'     => $reqStaff['birthdate'] ? $reqStaff['birthdate'] : null,
+                    'curp'          => $reqStaff['curp'],
+                    'rfc'           => $reqStaff['rfc'],
+                    'email'         => $reqStaff['email'],
+                    'phone'         => $reqStaff['phone'],
+                    'commission'    => $reqStaff['commission'],
+                    'image_profile' => $fileName,
+                    'created_by'  => auth()->user()->id
+                ]);
+            } else {
+                $txt                  = 'modificó';
+                $staff                = Staff::find($reqStaff['id']);
+                $staff->position_id   = $reqStaff['position_id'];
+                $staff->name          = $reqStaff['name'];
+                $staff->first_name    = $reqStaff['first_name'];
+                $staff->last_name     = $reqStaff['last_name'];
+                $staff->birthdate     = $reqStaff['birthdate'] ? $reqStaff['birthdate'] : null;
+                $staff->curp          = $reqStaff['curp'];
+                $staff->rfc           = $reqStaff['rfc'];
+                $staff->email         = $reqStaff['email'];
+                $staff->phone         = $reqStaff['phone'];
+                $staff->commission    = $reqStaff['commission'];
+                $staff->image_profile = $fileName;
+                $staff->updated_by    = auth()->user()->id;
+                $staff->save();
+            }
+            $staff->services()->sync($services);
+            return Response::response('El staff se '.$txt.' correctamente.');
         } catch (\Throwable $th) {
-            return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
+            return Response::response($th->getMessage(), null, true, 500);
         }
     }
 
     public function editStaff(Request $request) {
         try {
-            $txt                = 'modificó';
-            $staff              = Staff::find($request->id);
-            $staff->position_id = $request->position_id;
-            $staff->name        = $request->name;
-            $staff->first_name  = $request->first_name;
-            $staff->last_name   = $request->last_name;
-            $staff->birthdate   = $request->birthdate;
-            $staff->curp        = $request->curp;
-            $staff->rfc         = $request->rfc;
-            $staff->email       = $request->email;
-            $staff->phone       = $request->phone;
-            $staff->commission  = $request->commission;
-            if ($request->status === 0 || $request->status === 1) {
-                $staff->status = $request->status;
-                $txt           = $request->status === 1 ? 'activo' : 'desactivo';
-            }
+            $txt               = $request->status === 1 ? 'activo' : 'desactivo';
+            $staff             = Staff::find($request->id);
+            $staff->status     = $request->status;
             $staff->updated_by = auth()->user()->id;
             $staff->save();
             return Response::response('El staff se '.$txt.' correctamente.');
@@ -119,14 +154,6 @@ class StaffController extends Controller {
             return Response::response('El staff se eliminó correctamente.');
         } catch (\Throwable $th) {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
-        }
-    }
-
-    public function staffAndFile(Request $request) {
-        if ($request->id === 'null') {
-            self::saveStaff($request);
-        } else {
-            self::editStaff($request);
         }
     }
 }

@@ -3,7 +3,7 @@ import apiClient from '@/apiClient';
 import { showNotification } from '@/notification';
 import { ref, defineExpose } from 'vue';
 
-const { getParentStaff, positions } = defineProps({
+const { getParentStaff, positions, services } = defineProps({
     getParentStaff: Function,
     positions: Array,
     services: Array
@@ -12,10 +12,9 @@ const { getParentStaff, positions } = defineProps({
 const title           = ref('');
 const button          = ref('');
 const dialogVisible   = ref(false);
-const appUrl          = ref(window.location.origin);
-const token           = ref(document.head.querySelector('meta[name="csrf-token"]').getAttribute('content'));
 const upload          = ref(null);
 const imagePreviewUrl = ref(null);
+const uploadedFile    = ref(null);
 const staff           = ref({
     id: null,
     position_id: '',
@@ -42,8 +41,13 @@ const errors = ref({
     password_confirmation: false,
     password_incorrect: false
 });
+const servicesStaff = ref([]);
 
 const showModal = (_staff) => {
+    servicesStaff.value = [];
+    services.forEach(s => {
+        servicesStaff.value.push({id: s.id, val: false});
+    });
     resetErrors();
     deletePreview();
     title.value               = 'Crear nuevo staff';
@@ -75,27 +79,34 @@ const showModal = (_staff) => {
         staff.value.rfc           = _staff.rfc;
         staff.value.commission    = _staff.commission;
         staff.value.image_profile = _staff.image_profile;
+        _staff.services.forEach(st => {
+            servicesStaff.value.forEach(s => {
+                if (st.id === s.id) {
+                    s.val = true;
+                }
+            });
+        });
     }
     dialogVisible.value = true;
 };
 
 const saveStaff = async () => {
-    if (!imagePreviewUrl.value) {
-        if (validate()) {
-            const method   = !staff.value.id ? 'POST' : 'PUT';
-            const response = await apiClient('admin/staff', method, {staff: staff.value, image: upload.value});
-            if (response.error) {
-                showNotification(response.msj, '¡Error!', 'error', 7500);
-                return
-            }
-            dialogVisible.value = false;
-            getParentStaff();
-            showNotification(response.msj);
+    if (validate()) {
+        const formData = new FormData();
+        if (uploadedFile.value instanceof File) {
+            formData.append('file', uploadedFile.value);
         }
-    } else {
-        if (validate()) {
-            upload.value.submit();
+        formData.append('staff', JSON.stringify(staff.value));
+        formData.append('services', JSON.stringify(servicesStaff.value));
+
+        const response = await apiClient('admin/staff', 'POST', formData);
+        if (response.error) {
+            showNotification(response.msj, '¡Error!', 'error', 7500);
+            return
         }
+        dialogVisible.value = false;
+        getParentStaff();
+        showNotification(response.msj);
     }
 };
 
@@ -131,6 +142,7 @@ const resetErrors = () => {
 const deletePreview = () => {
     if (imagePreviewUrl.value) {
         imagePreviewUrl.value = null;
+        uploadedFile.value    = null;
         upload.value.clearFiles();
     }
 };
@@ -138,17 +150,9 @@ const deletePreview = () => {
 const handleChange = (uploadFile, uploadFiles) => {
     if (uploadFile.raw) {
         imagePreviewUrl.value = URL.createObjectURL(uploadFile.raw)
+        uploadedFile.value    = uploadFile.raw;
     }
 }
-
-const handleSuccess = (response, file, fileList) => {
-    showNotification('¡Correcto!', response.msj, 'success');
-};
-const handleError = (response) => {
-    upload.value.clearFiles();
-    response = JSON.parse(response.message);
-    showNotification('¡Error!', response.data, 'error', 10000);
-};
 
 const isNumber = (evt) => {
     const charCode = evt.which ? evt.which : evt.keyCode;
@@ -172,24 +176,9 @@ defineExpose({
         <el-row :gutter="20">
             <el-col :span="8" :offset="8" class="mb-4 justify-center items-center" style="display: flex; position: relative;">
                 <!-- <font-awesome-icon class="bold text-black pointer" :icon="['fas', 'pen']" style="position: absolute; top: 0; right: 10vh;" /> -->
-                 <el-upload
+                <el-upload
                     ref="upload"
                     class="upload-demo"
-                    :data="{
-                        id: staff.id,
-                        position_id: staff.position_id,
-                        name: staff.name,
-                        first_name: staff.first_name,
-                        last_name: staff.last_name,
-                        birthdate: staff.birthdate,
-                        email: staff.email,
-                        phone: staff.phone,
-                        curp: staff.curp,
-                        rfc: staff.rfc,
-                        commission: staff.commission,
-                    }"
-                    :action="appUrl+'/admin/staffAndFile'"
-                    :headers="{'X-CSRF-TOKEN': token}"
                     multiple
                     :auto-upload="false"
                     accept=".jpg,.png,.jpeg"
@@ -198,27 +187,16 @@ defineExpose({
                     style="position: absolute; top: 0; right: 10vh;"
                     :show-file-list="false"
                     :on-change="handleChange"
-                    :on-success="handleSuccess"
-                    :on-error="handleError"
                 >
                     <template #trigger>
                         <font-awesome-icon class="bold text-success pointer" :icon="['fas', 'pen']" v-if="!imagePreviewUrl" style="font-size: 1.2rem;" title="Elegir imagen" />
                     </template>
                     <font-awesome-icon class="bold text-danger pointer" :icon="['fas', 'xmark']" v-if="imagePreviewUrl" style="font-size: 1.2rem;" @click="deletePreview" title="Eliminar imagen" />
-                    <!-- <el-button class="ml-3" type="success" @click="submitUpload">
-                    upload to server
-                    </el-button> -->
-                    <template #file="{ file }">
-                        <img
-                        :src="file.url || URL.createObjectURL(file.raw)"
-                        class="preview-image"
-                        alt="preview"
-                        />
-                    </template>
                 </el-upload>
-                <img class="w-50 rounded-circle" src="/general/user.jpg" alt="Temazcal Maranatha" v-if="!staff.image_profile && !imagePreviewUrl">
-                <img class="w-50 rounded-circle" :src="imagePreviewUrl" alt="Temazcal Maranatha" v-if="!staff.image_profile && imagePreviewUrl">
-                <img class="w-50 rounded-circle" src="/general/user.jpg" alt="Temazcal Maranatha" v-if="staff.image_profile && !imagePreviewUrl">
+                <img class="w-50 rounded-circle img-profile" src="/general/user.jpg" alt="Temazcal Maranatha" v-if="!staff.image_profile && !imagePreviewUrl">
+                <img class="w-50 rounded-circle img-profile" :src="imagePreviewUrl" alt="Temazcal Maranatha" v-if="!staff.image_profile && imagePreviewUrl">
+                <img class="w-50 rounded-circle img-profile" :src="`/staff/${staff.image_profile}`" alt="Temazcal Maranatha" v-if="staff.image_profile && !imagePreviewUrl">
+                <img class="w-50 rounded-circle img-profile" :src="imagePreviewUrl" alt="Temazcal Maranatha" v-if="staff.image_profile && imagePreviewUrl">
             </el-col>
             <el-col :span="8"></el-col>
             <el-col :span="8" class="mb-3">
@@ -290,7 +268,7 @@ defineExpose({
             <el-col :span="24" class="mb-3">
                 <label class="bold mb-2">Servicios que realiza</label><br>
                 <div>
-                    <el-checkbox v-for="(s, i) in services" :key="i" :label="s.name" size="large" />
+                    <el-checkbox v-for="(s, i) in services" :key="i" v-model="servicesStaff[i].val" :label="s.name" size="large" />
                 </div>
             </el-col>
         </el-row>
@@ -306,5 +284,9 @@ defineExpose({
 </template>
 
 <style scoped>
-
+.img-profile {
+    max-height: 188px;
+    object-fit: cover;
+    object-position: center;
+}
 </style>

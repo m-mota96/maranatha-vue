@@ -42,5 +42,4 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function() {
     Route::post('staff', [StaffController::class, 'saveStaff']);
     Route::put('staff', [StaffController::class, 'editStaff']);
     Route::delete('staff/{id}', [StaffController::class, 'deleteStaff']);
-    Route::post('staffAndFile', [StaffController::class, 'staffAndFile']);
 });

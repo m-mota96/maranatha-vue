@@ -6,12 +6,14 @@ const apiClient = async (
   data?: Record<string, any>
 ): Promise<any> => {
   try {
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+
     const options =
       method !== 'GET'
         ? {
             method,
             headers: {
-              'Content-Type': 'application/json; charset=utf-8'
+              ...(isFormData ? { 'Content-Type': 'multipart/form-data' } : { 'Content-Type': 'application/json; charset=utf-8' })
             },
             data
           }
