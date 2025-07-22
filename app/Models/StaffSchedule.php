@@ -10,7 +10,7 @@ class StaffSchedule extends Model
     use HasFactory;
 
     protected $fillable= [
-        'staff_id', 'day', 'start_time', 'end_time', 'meal_start_time', 'meal_end_time', 'status', 
+        'staff_id', 'day', 'start_time', 'end_time', 'meal_start_time', 'meal_end_time', 'status', 'created_by', 'updated_by', 
     ];
 
     public function staff() {

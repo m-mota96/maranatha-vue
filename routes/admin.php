@@ -2,10 +2,13 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\ModulePermissionController;
+use App\Http\Controllers\PositionController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\StaffController;
+use App\Http\Controllers\StaffScheduleController;
 use App\Http\Controllers\UserPermissionController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,6 +23,7 @@ Route::prefix('administrador')->name('administrador.')->middleware(['auth', 'rol
     Route::get('operacion_servicios', [ServiceController::class, 'services'])->name('operacion_servicios');
     Route::get('operacion_productos', [ProductController::class, 'products'])->name('operacion_productos');
     Route::get('operacion_paquetes', [PackageController::class, 'packages'])->name('operacion_paquetes');
+    Route::get('clientes_clientes', [CustomerController::class, 'customers'])->name('clientes_clientes');
 });
 
 Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function() {
@@ -42,4 +46,14 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function() {
     Route::post('staff', [StaffController::class, 'saveStaff']);
     Route::put('staff', [StaffController::class, 'editStaff']);
     Route::delete('staff/{id}', [StaffController::class, 'deleteStaff']);
+    Route::post('schedule', [StaffScheduleController::class, 'saveSchedule']);
+    Route::put('schedule', [StaffScheduleController::class, 'editSchedule']);
+    Route::get('positions', [PositionController::class, 'getPositions']);
+    Route::post('position', [PositionController::class, 'savePosition']);
+    Route::put('position', [PositionController::class, 'editPosition']);
+    Route::delete('position/{id}', [PositionController::class, 'deletePosition']);
+    Route::get('customers', [CustomerController::class, 'getCustomers']);
+    Route::post('customer', [CustomerController::class, 'saveCustomer']);
+    Route::put('customer', [CustomerController::class, 'editCustomer']);
+    Route::delete('customer/{id}', [CustomerController::class, 'deleteCustomer']);
 });

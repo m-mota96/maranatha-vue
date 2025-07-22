@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue';
 import Menu from './Menu.vue';
 
-const { menu, dad, module } = defineProps({
+const { menu, dad, module, background } = defineProps({
     menu: {
         type: Array,
         required: true
@@ -16,10 +16,16 @@ const { menu, dad, module } = defineProps({
         type: Object,
         required: false,
         default: {
+            name: '',
             dad: {
                 name: 'Inicio'
             }
         }
+    },
+    background: {
+        type: Boolean,
+        required: false,
+        default: true
     }
 });
 
@@ -29,7 +35,8 @@ const dadName     = ref('');
 
 onMounted(() => {
     if (module?.dad?.name) {
-        title.value = `${module.dad.name} - ${module.name}`;
+        const moduleName = module.name ? `- ${module.name}` : '';
+        title.value = `${module.dad.name} ${moduleName}`;
     } else {
         title.value = module.dad.name;
     }
@@ -50,7 +57,7 @@ onMounted(() => {
                     <h4>{{ title }}</h4>
                 </el-col>
                 <el-col :span="24" class="content radius-bottom p-3">
-                    <el-row class="bg-white radius-top radius-bottom p-3" style="height: 100%;">
+                    <el-row :class="{'bg-white radius-top radius-bottom p-3': background}" style="height: 100%;">
                         <slot />
                     </el-row>
                 </el-col>

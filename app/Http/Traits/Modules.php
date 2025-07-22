@@ -27,6 +27,7 @@ trait Modules {
             $query->where('user_id', auth()->user()->id);
         })
         ->where('status', 1)->where('module_id', null)
+        ->orderBy('name')
         ->get();
         return $modules;
     }

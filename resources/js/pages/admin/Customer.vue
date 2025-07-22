@@ -3,10 +3,9 @@ import { ref, onMounted } from 'vue';
 import Layout from './Layout.vue';
 import apiClient from '@/apiClient';
 import { showNotification } from '@/notification';
-import CreateEditStaff from './modals/CreateEditStaff.vue';
-import StaffSchedules from './modals/StaffSchedules.vue';
+import CreateEditCustomer from './modals/CreateEditCustomer.vue';
 
-const { module, menu, positions, services } = defineProps({
+const { module, menu } = defineProps({
     module: {
         type: Object,
         required: true
@@ -14,32 +13,21 @@ const { module, menu, positions, services } = defineProps({
     menu: {
         type: Array,
         required: true
-    },
-    positions: {
-        type: Array,
-        required: true
-    },
-    services: {
-        type: Array,
-        required: true
     }
 });
 
-const staffSchedulesRef  = ref(null);
-const createEditStaffRef = ref(null);
-const staff              = ref([]);
-const pagination         = ref({
+const createEditCustomerRef = ref(null);
+const customers             = ref([]);
+const pagination            = ref({
     currentPage: 1,
     pageSize: 10,
     total: 0
 });
 const search = ref({
-    position_id: 0,
     name: '',
-    first_name: '',
-    last_name: '',
     email: '',
     phone: '',
+    rfc: '',
     status: 'all'
 });
 const order = ref({
@@ -48,22 +36,22 @@ const order = ref({
 });
 
 onMounted(() => {
-    getStaff();
+    getCustomers();
 });
 
-const getStaff = async () => {
-    const response = await apiClient('admin/staff', 'GET', {pagination: pagination.value, search: search.value, order: order.value});
+const getCustomers = async () => {
+    const response = await apiClient('admin/customers', 'GET', {pagination: pagination.value, search: search.value, order: order.value});
     if (response.error) {
         showNotification(response.msj, '¡Error!', 'error', 7500);
         return
     }
-    staff.value = response.data.staff;
+    customers.value = response.data.customers;
     pagination.value.total = response.data.totalRows;
 };
 
-const statusStaff = async (_staff) => {
-    _staff.status = _staff.status === 1 ? 0 : 1;
-    const response = await apiClient('admin/staff', 'PUT', {id: _staff.id, status: _staff.status});
+const statusCustomer = async (_customer) => {
+    _customer.status = _customer.status === 1 ? 0 : 1;
+    const response   = await apiClient('admin/customer', 'PUT', _customer);
     if (response.error) {
         showNotification(response.msj, '¡Error!', 'error');
         return
@@ -71,49 +59,36 @@ const statusStaff = async (_staff) => {
     showNotification(response.msj);
 };
 
-const deleteStaff = async (id) => {
-    const response = await apiClient(`admin/staff/${id}`, 'DELETE');
+const deleteCustomer = async (id) => {
+    const response = await apiClient(`admin/customer/${id}`, 'DELETE');
     if (response.error) {
         showNotification(response.msj, '¡Error!', 'error');
         return
     }
-    getStaff();
+    getCustomers();
     showNotification(response.msj);
 };
 
 const openModal = (data = null) => {
-    createEditStaffRef.value?.showModal(data);
-};
-
-const openModalSchedule = (id, name, info_schedule) => {
-    staffSchedulesRef.value?.showModal(id, name, info_schedule);
+    createEditCustomerRef.value?.showModal(data);
 };
 
 const resetFilters = () => {
-    search.value.service_type_id  = 0;
     search.value.name             = '';
-    search.value.first_name       = '';
-    search.value.last_name        = '';
     search.value.email            = '';
     search.value.phone            = '';
+    search.value.rfc              = '';
     search.value.status           = 'all';
     order.value.orderBy           = 'id';
     order.value.order             = 'DESC';
-    getStaff();
+    getCustomers();
 }
-
-const formatCurrency = (value) => {
-    return new Intl.NumberFormat('es-MX', {
-        style: 'currency',
-        currency: 'MXN'
-    }).format(value);
-};
 
 const handleSizeChange = (val) => {
-    getStaff();
+    getCustomers();
 }
 const handleCurrentChange = (val) => {
-    getStaff();
+    getCustomers();
 }
 </script>
 
@@ -121,21 +96,20 @@ const handleCurrentChange = (val) => {
     <Layout :menu="menu" :module="module">
         <el-col class="mb-2" :span="4" :offset="15">
             <label for="order">Ordernar por</label>
-            <el-select v-model="order.orderBy" @change="getStaff" id="order">
+            <el-select v-model="order.orderBy" @change="getCustomers" id="order">
                 <el-option :key="0" label="Id" value="id" />
-                <el-option :key="1" label="Puesto" value="position_id" />
-                <el-option :key="2" label="Nombre" value="name" />
-                <el-option :key="3" label="Apellido paterno" value="first_name" />
-                <el-option :key="4" label="Apellido materno" value="last_name" />
-                <el-option :key="5" label="Correo electrónico" value="email" />
-                <el-option :key="6" label="Teléfono" value="phone" />
+                <el-option :key="1" label="Nombre" value="name" />
+                <el-option :key="2" label="Correo electrónico" value="email" />
+                <el-option :key="3" label="Teléfono" value="phone" />
+                <el-option :key="4" label="Razón social" value="company_name" />
+                <el-option :key="5" label="Rfc" value="rfc" />
+                <el-option :key="6" label="Dirección" value="address" />
                 <el-option :key="7" label="Estatus" value="status" />
-                <el-option :key="8" label="Comisión" value="commission" />
             </el-select>
         </el-col>
         <el-col class="mb-2 ps-3" :span="4">
             <br>
-            <el-select v-model="order.order" @change="getStaff">
+            <el-select v-model="order.order" @change="getCustomers">
                 <el-option :key="0" label="Ascendente" value="ASC" />
                 <el-option :key="1" label="Descendente" value="DESC" />
             </el-select>
@@ -152,57 +126,34 @@ const handleCurrentChange = (val) => {
             </el-tooltip>
         </el-col>
         <el-col :span="24" class="table-wrapper">
-            <el-table :data="staff" stripe empty-text="Ningún dato disponible en esta tabla" header-cell-class-name="text-dark bold">
+            <el-table :data="customers" stripe empty-text="Ningún dato disponible en esta tabla" header-cell-class-name="text-dark bold">
                 <el-table-column prop="id" label="#" width="70" align="center" />
-                <el-table-column prop="position.name">
-                    <template #header>
-                        <el-select placeholder="Puesto" v-model="search.position_id" @change="getStaff">
-                            <el-option :value="0" label="Puesto" />
-                            <el-option
-                                v-for="p in positions"
-                                :key="p.id"
-                                :value="p.id"
-                                :label="p.name"
-                            />
-                        </el-select>
-                    </template>
-                </el-table-column>
                 <el-table-column prop="name">
                     <template #header>
-                        <el-input placeholder="Nombre" title="Escribe para buscar" v-model="search.name" @input="getStaff" clearable />
+                        <el-input placeholder="Nombre" title="Escribe para buscar" v-model="search.name" @input="getCustomers" clearable />
                     </template>
                 </el-table-column>
-                <el-table-column prop="first_name">
-                    <template #header>
-                        <el-input placeholder="Apellido paterno" title="Escribe para buscar" v-model="search.first_name" @input="getStaff" clearable />
-                    </template>
-                </el-table-column>
-                <el-table-column prop="last_name">
-                    <template #header>
-                        <el-input placeholder="Apellido materno" title="Escribe para buscar" v-model="search.last_name" @input="getStaff" clearable />
-                    </template>
-                </el-table-column>
+                <el-table-column prop="birthdate" label="Fecha de nacimiento"/>
                 <el-table-column prop="email">
                     <template #header>
-                        <el-input placeholder="Correo electrónico" title="Escribe para buscar" v-model="search.email" @input="getStaff" clearable />
+                        <el-input placeholder="Correo electrónico" title="Escribe para buscar" v-model="search.email" @input="getCustomers" clearable />
                     </template>
                 </el-table-column>
                 <el-table-column prop="phone">
                     <template #header>
-                        <el-input placeholder="Teléfono" title="Escribe para buscar" v-model="search.phone" @input="getStaff" clearable />
+                        <el-input placeholder="Teléfono" title="Escribe para buscar" v-model="search.phone" @input="getCustomers" clearable />
                     </template>
                 </el-table-column>
-                <!-- <el-table-column prop="curp" label="Curp" />
-                <el-table-column prop="rfc" label="Rfc" /> -->
-                <el-table-column prop="commission" label="Comisión" />
-                <el-table-column label="Servicios" width="300">
-                    <template #default="scope">
-                        <span class="badge text-bg-primary me-1" v-for="(s, i) in scope.row.services" :key="i">{{ s.name }}</span>
+                <el-table-column prop="company_name" label="Razón social"/>
+                <el-table-column prop="rfc">
+                    <template #header>
+                        <el-input placeholder="Rfc" title="Escribe para buscar" v-model="search.rfc" @input="getCustomers" clearable />
                     </template>
                 </el-table-column>
+                <el-table-column prop="address" label="Dirección"/>
                 <el-table-column align="center" width="150">
                     <template #header>
-                        <el-select placeholder="Estatus" v-model="search.status" @change="getStaff">
+                        <el-select placeholder="Estatus" v-model="search.status" @change="getCustomers">
                             <el-option value="all" label="Estatus" />
                             <el-option :value="1" label="Activo" />
                             <el-option :value="0" label="Inactivo" />
@@ -213,9 +164,9 @@ const handleCurrentChange = (val) => {
                         <span class="text-danger bold" v-if="scope.row.status == 0">Inactivo</span>
                     </template>
                 </el-table-column>
-                <el-table-column width="200" align="center">
+                <el-table-column width="150" align="center">
                     <template #header>
-                        <el-tooltip content="Nuevo staff" effect="customized" placement="top">
+                        <el-tooltip content="Nuevo cliente" effect="customized" placement="top">
                             <el-button class="btn-success ps-2 pe-2" @click="openModal()">
                                 <font-awesome-icon :icon="['fas', 'plus']" />
                             </el-button>
@@ -223,25 +174,16 @@ const handleCurrentChange = (val) => {
                     </template>
                     <template #default="scope">
                         <el-button-group>
-                            <el-tooltip content="Editar staff" effect="customized" placement="top">
+                            <el-tooltip content="Editar cliente" effect="customized" placement="top">
                                 <el-button class="btn-success ps-2 pe-2" @click="openModal(scope.row)">
                                     <font-awesome-icon :icon="['fas', 'pen']" />
                                 </el-button>
                             </el-tooltip>
-                            <el-tooltip content="Editar horarios" effect="customized" placement="top">
-                                <el-button
-                                    type="primary"
-                                    class="ps-2 pe-2"
-                                    @click="openModalSchedule(scope.row.id, `${scope.row.name} ${scope.row.first_name} ${scope.row.last_name}`, scope.row.schedules)"
-                                >
-                                    <font-awesome-icon :icon="['far', 'clock']" />
-                                </el-button>
-                            </el-tooltip>
-                            <el-tooltip :content="scope.row.status ? 'Desactivar staff' : 'Activar staff'" effect="customized" placement="top">
+                            <el-tooltip :content="scope.row.status ? 'Desactivar cliente' : 'Activar cliente'" effect="customized" placement="top">
                                 <el-button
                                     :class="{'btn-warning': scope.row.status, 'btn-info': !scope.row.status}"
                                     class="ps-2 pe-2"
-                                    @click="statusStaff(scope.row)"
+                                    @click="statusCustomer(scope.row)"
                                 >
                                     <font-awesome-icon :icon="['fas', 'eye']" />
                                 </el-button>
@@ -254,13 +196,13 @@ const handleCurrentChange = (val) => {
                                 confirm-button-type="danger"
                                 cancel-button-type="primary"
                                 :width="200"
-                                title="¿Seguro que deseas eliminar este staff?"
+                                title="¿Seguro que deseas eliminar este cliente?"
                                 placement="left"
-                                @confirm="deleteStaff(scope.row.id)"
+                                @confirm="deleteCustomer(scope.row.id)"
                             >
                                 <template #reference>
                                     <span>
-                                        <el-tooltip content="Eliminar staff" effect="customized" placement="top">
+                                        <el-tooltip content="Eliminar cliente" effect="customized" placement="top">
                                             <el-button class="btn-danger ps-2 pe-2" style="border-top-left-radius: 0px; border-bottom-left-radius: 0px;">
                                                 <font-awesome-icon :icon="['fas', 'trash-can']" />
                                             </el-button>
@@ -284,8 +226,7 @@ const handleCurrentChange = (val) => {
             />
         </el-col>
     </Layout>
-    <CreateEditStaff ref="createEditStaffRef" :get-parent-staff="getStaff" :positions="positions" :services="services" />
-    <StaffSchedules ref="staffSchedulesRef" :get-parent-staff="getStaff"/>
+    <CreateEditCustomer ref="createEditCustomerRef" :get-parent-customers="getCustomers" />
 </template>
 
 <style scoped>

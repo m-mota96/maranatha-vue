@@ -25,7 +25,7 @@ class StaffController extends Controller {
         return Inertia::render('admin/Staff', [
             'module'    => $module,
             'menu'      => Modules::modulesMenu(),
-            'positions' => Position::where('status', 1)->get(),
+            'positions' => Position::where('status', 1)->orderBy('name')->get(),
             'services'  => $services
         ]);
     }
@@ -39,7 +39,8 @@ class StaffController extends Controller {
             $search     = $request->search;
             $order      = $request->order;
 
-            $query  = Staff::with(['position', 'schedules', 'services']);
+            $query = Staff::with(['position', 'schedules', 'services']);
+
             if ($search['position_id']) $query->where('position_id', $search['position_id']);
             
             if ($search['name']) $query->whereRaw('name LIKE "%'.$search['name'].'%"');
