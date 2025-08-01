@@ -102,4 +102,13 @@ class CustomerController extends Controller {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
         }
     }
+
+    public function searchCustomer(Request $request) {
+        try {
+            $customer = Customer::select('id', 'name')->where('name', 'LIKE', '%'.$request->customer.'%')->orderBy('name')->get();
+            return Response::response(null, $customer);
+        } catch (\Throwable $th) {
+            return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
+        }
+    }
 }

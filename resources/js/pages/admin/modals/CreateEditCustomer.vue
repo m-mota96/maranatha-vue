@@ -1,7 +1,7 @@
 <script lang="js" setup>
 import apiClient from '@/apiClient';
 import { showNotification } from '@/notification';
-import { ref, defineExpose, computed } from 'vue';
+import { ref, defineExpose } from 'vue';
 
 const { getParentCustomers } = defineProps({
     getParentCustomers: {

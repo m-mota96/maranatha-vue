@@ -4,6 +4,7 @@ import Layout from './Layout.vue';
 import apiClient from '@/apiClient';
 import { showNotification } from '@/notification';
 import CreateEditCustomer from './modals/CreateEditCustomer.vue';
+import { dateEs } from '@/dateEs';
 
 const { module, menu } = defineProps({
     module: {
@@ -133,7 +134,11 @@ const handleCurrentChange = (val) => {
                         <el-input placeholder="Nombre" title="Escribe para buscar" v-model="search.name" @input="getCustomers" clearable />
                     </template>
                 </el-table-column>
-                <el-table-column prop="birthdate" label="Fecha de nacimiento"/>
+                <el-table-column label="Fecha de nacimiento">
+                    <template #default="scope">
+                        {{ scope.row.birthdate ? dateEs(scope.row.birthdate, '/', 1) : '' }}
+                    </template>
+                </el-table-column>
                 <el-table-column prop="email">
                     <template #header>
                         <el-input placeholder="Correo electrónico" title="Escribe para buscar" v-model="search.email" @input="getCustomers" clearable />

@@ -105,3 +105,24 @@ a {
 .el-checkbox {
     --el-checkbox-checked-text-color: unset !important;
 }
+.my-btn {
+    cursor: pointer;
+    padding: 3px;
+    background: #E1E9FF;
+    color: #4e80ff;
+    border-radius: 0.3rem;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+.relative {
+    position: relative !important;
+}
+.absolute {
+    position: absolute !important;
+}
+.right {
+    right: 0 !important;
+}
+.left {
+    left: 0 !important;
+}

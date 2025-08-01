@@ -14,6 +14,6 @@ class ServiceType extends Model
     ];
 
     public function services() {
-        return $this->hasMany(Service::class);
+        return $this->hasMany(Service::class)->where('status', 1)->orderBy('name');
     }
 }

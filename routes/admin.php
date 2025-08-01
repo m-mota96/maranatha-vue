@@ -43,6 +43,7 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function() {
     Route::put('service', [ServiceController::class, 'editService']);
     Route::delete('service/{id}', [ServiceController::class, 'deleteService']);
     Route::get('staff', [StaffController::class, 'getStaff']);
+    Route::get('searchStaff', [StaffController::class, 'searchStaff']);
     Route::post('staff', [StaffController::class, 'saveStaff']);
     Route::put('staff', [StaffController::class, 'editStaff']);
     Route::delete('staff/{id}', [StaffController::class, 'deleteStaff']);
@@ -53,6 +54,7 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function() {
     Route::put('position', [PositionController::class, 'editPosition']);
     Route::delete('position/{id}', [PositionController::class, 'deletePosition']);
     Route::get('customers', [CustomerController::class, 'getCustomers']);
+    Route::get('customer', [CustomerController::class, 'searchCustomer']);
     Route::post('customer', [CustomerController::class, 'saveCustomer']);
     Route::put('customer', [CustomerController::class, 'editCustomer']);
     Route::delete('customer/{id}', [CustomerController::class, 'deleteCustomer']);

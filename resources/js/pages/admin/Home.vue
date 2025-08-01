@@ -2,18 +2,28 @@
 import { ref } from 'vue';
 import Layout from './Layout.vue';
 import CreateEditCustomer from './modals/CreateEditCustomer.vue';
+import CreateAppointment from './modals/CreateAppointment.vue';
 
-const { menu } = defineProps({
+const { menu, serviceType } = defineProps({
     menu: {
+        type: Array,
+        required: true
+    },
+    serviceType: {
         type: Array,
         required: true
     }
 });
 
 const createEditCustomerRef = ref(null);
+const createAppoimentRef    = ref(null);
 
 const newCustomer = (data = null) => {
     createEditCustomerRef.value?.showModal(data);
+};
+
+const newAppoiment = () => {
+    createAppoimentRef.value?.showModal();
 };
 </script>
 
@@ -30,7 +40,7 @@ const newCustomer = (data = null) => {
                     <el-card class="p-6">
                         <el-row :gutter="20">
                             <el-col :span="12" class="mb-3">
-                                <div class="card-warning p-4">
+                                <div class="card-warning p-4" @click="newAppoiment()">
                                     <h1 class="text-center"><font-awesome-icon :icon="['fas', 'clipboard']" /></h1>
                                     <h6 class="text-center">Nueva cita</h6>
                                 </div>
@@ -54,6 +64,7 @@ const newCustomer = (data = null) => {
         </el-col>
     </Layout>
     <CreateEditCustomer ref="createEditCustomerRef" />
+    <CreateAppointment ref="createAppoimentRef" :service-type="serviceType" />
 </template>
 
 <style scoped>

@@ -157,4 +157,22 @@ class StaffController extends Controller {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
         }
     }
+
+    public function searchStaff(Request $request) {
+        try {
+            $weekDay  = date("w", strtotime($request->dateFormatted)) + 1;
+            $datetime = \DateTime::createFromFormat('h:i A', $request->horary);
+            $horary   = $datetime->format('H:i');
+            $staff = Staff::with(['services:id,name', 'schedules:id,staff_id,day,start_time,meal_start_time,meal_end_time,end_time'])
+            ->select('id', 'name', 'first_name', 'last_name')
+            ->whereHas('schedules', function($q) use($weekDay, $horary) {
+                $q->where('day', $weekDay)->where('start_time', '<=', $horary)->where('end_time', '>=', $horary)->where('status', 1);
+            })
+            ->orderBy('name')
+            ->get();
+            return Response::response(null, $staff);
+        } catch (\Throwable $th) {
+            return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
+        }
+    }
 }
