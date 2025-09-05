@@ -10,7 +10,7 @@ use App\Models\ServiceType;
 
 class AdminController extends Controller {
     public function index() {
-        $serviceTypes = ServiceType::with(['services:id,service_type_id,name,price,discounted_price,time'])
+        $serviceTypes = ServiceType::with(['services:id,service_type_id,name,price,discounted_price,time,color'])
         ->where('status', 1)
         ->orderBy('name')
         ->get()

@@ -17,7 +17,8 @@ const service       = ref({
     name: '',
     price : '',
     discounted_price: '',
-    time: 15
+    time: 15,
+    color: ''
 });
 const errors = ref({
     service_type_id: false,
@@ -37,6 +38,7 @@ const showModal = (_service) => {
     service.value.price            = '';
     service.value.discounted_price = '';
     service.value.time             = 15;
+    service.value.color            = '';
     if (_service) {
         title.value                    = 'Editar servicio';
         button.value                   = 'Guardar cambios';
@@ -46,6 +48,7 @@ const showModal = (_service) => {
         service.value.price            = _service.price;
         service.value.discounted_price = _service.discounted_price;
         service.value.time             = _service.time;
+        service.value.color            = _service.color;
     }
     dialogVisible.value = true;
 };
@@ -185,7 +188,7 @@ defineExpose({
         <el-col :span="24" class="mb-3">
             <label for="time" class="bold">Duración del servicio <span class="text-danger">*</span></label>
             <!-- <el-input v-model="service.time" class="el-form-item" :class="{'is-error': errors.time}" id="time" /> -->
-             <el-select
+            <el-select
                 class="el-form-item"
                 :class="{'is-error': errors.time}"
                 id="serviceType"
@@ -200,6 +203,11 @@ defineExpose({
                 />
             </el-select>
             <span class="text-danger fs-small" v-if="errors.time">La duración del servicio es obligatoria.</span>
+        </el-col>
+        <el-col :span="24" class="mb-3">
+            <label for="color" class="bold">Color</label><br>
+            <el-color-picker class="w-100" v-model="service.color" />
+             <!-- <el-color-picker-panel v-model="service.color" /> -->
         </el-col>
         <template #footer>
             <div class="dialog-footer">

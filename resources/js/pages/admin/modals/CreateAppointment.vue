@@ -22,6 +22,7 @@ const button                = ref('Guardar');
 const staff                 = ref([]);
 const quantityServices      = ref(1);
 const services              = ref([]);
+const currentDate           = ref(new Date());
 const form                  = ref({
     customer_id: null,
     customer: '',
@@ -31,15 +32,15 @@ const form                  = ref({
     service_type: [],
     services: []
 });
-const groups = [
-    { id: 1, label: 'Usuario 1' },
-    { id: 2, label: 'Usuario 2' },
-  ];
+const groups = ref([]);
+const items  = ref([]);
 
-const items = [
-    { group: 1, type: 'range', start: new Date(`2025-08-01T06:00:00`).getTime(), end: new Date(`2025-08-01T07:00:00`).getTime(), itemContent: 'Pedicure' },
-    { group: 2, type: 'range', start: new Date(`2025-08-01T12:00:00`).getTime(), end: new Date(`2025-08-01T15:00:00`).getTime(), itemContent: 'Manicure' },
-];
+onMounted(() => {
+    const year        = currentDate.value.getFullYear();
+    const month       = (currentDate.value.getMonth() + 1).toString().padStart(2, '0');
+    const day         = currentDate.value.getDate().toString().padStart(2, '0');
+    currentDate.value = `${year}-${month}-${day}`;
+});
 
 const showModal = () => {
     resetForm();
@@ -51,7 +52,7 @@ const showModal = () => {
 };
 
 const searchStaff = async () => {
-    previewServices();
+    // previewServices();
     form.value.dateFormatted = formatDate(form.value.date);
     const response           = await apiClient('admin/searchStaff', 'GET', { dateFormatted: form.value.dateFormatted, horary: form.value.horary });
     if (response.error) {
@@ -59,6 +60,9 @@ const searchStaff = async () => {
         return
     }
     staff.value = response.data;
+    response.data.forEach(s => {
+        groups.value.push({id: s.id, label: s.name});
+    });
 };
 
 const addService = () => {
@@ -96,42 +100,75 @@ const validateService = (currentIndex) => {
     });
 };
 
-const moreMinus = (value, index, currentIndex) => {
+const moreMinus = (value, index, currentIndex, info) => {
     let val          = form.value.services[index][currentIndex].quantity;
     val              = val + (value);
-    if (val < 1) val = 1;
+    if (val < 1) {
+        val = 1;
+        form.value.services[index][currentIndex].quantity = 1;
+        return
+    }
     form.value.services[index][currentIndex].quantity = val;
-    previewServices();
+    previewServices(value, info);
 };
 
-const previewServices = () => {
-    services.value = [];
-    // let initialHorary = to24HourFormat(form.value.horary);
+const previewServices = (quantity, info, checked = true) => {
     let initialHorary = form.value.horary ? form.value.horary : '';
-    let time          = null;
-    form.value.services.forEach(s => {
-        for (let i = 0; i < s.length; i++) {
-            if (s[i].active) {
-                for (let j = 0; j < s[i].quantity; j++) {
-                    services.value.push({
-                        uid: generateUID(),
-                        id: s[i].id,
-                        name: s[i].name+` (${s[i].time} min.)`,
-                        time: s[i].time,
-                        staff_id: '',
-                        initial_time: initialHorary,
-                        final_time: initialHorary ? addMinutesToTime(initialHorary, s[i].time) : '--:--',
-                        start_time: initialHorary ? to24HourFormat(initialHorary) : null,
-                        end_time: initialHorary ? to24HourFormat(addMinutesToTime(initialHorary, s[i].time)) : null
-                    });
-                    time = s[i].time;
+    if (checked) {
+        switch (quantity) {
+            case 1:
+                services.value.push({
+                    uid: generateUID(),
+                    id: info.id,
+                    name: info.name+` (${info.time} min.)`,
+                    time: info.time,
+                    staff_id: '',
+                    initial_time: initialHorary,
+                    final_time: initialHorary ? addMinutesToTime(initialHorary, info.time) : '--:--',
+                    start_time: initialHorary ? to24HourFormat(initialHorary) : null,
+                    end_time: initialHorary ? to24HourFormat(addMinutesToTime(initialHorary, info.time)) : null,
+                    color: info.color
+                });
+                break;
+            case -1:
+                const index = services.value.map(s => s.id).lastIndexOf(info.id);
+                if (index !== -1) {
+                    services.value.splice(index, 1);
                 }
-                if (time && initialHorary) {
-                    initialHorary = addMinutesToTime(initialHorary.toString(), time);
-                }
-            }
+                break;
         }
-    });
+    } else {
+        info.quantity  = 1;
+        services.value = services.value.filter(s => s.id !== info.id);
+    }
+    setItemTimeLine();
+    // services.value = [];
+    // // let initialHorary = to24HourFormat(form.value.horary);
+    // let initialHorary = form.value.horary ? form.value.horary : '';
+    // let time          = null;
+    // form.value.services.forEach(s => {
+    //     for (let i = 0; i < s.length; i++) {
+    //         if (s[i].active) {
+    //             for (let j = 0; j < s[i].quantity; j++) {
+                    // services.value.push({
+                    //     uid: generateUID(),
+                    //     id: s[i].id,
+                    //     name: s[i].name+` (${s[i].time} min.)`,
+                    //     time: s[i].time,
+                    //     staff_id: '',
+                    //     initial_time: initialHorary,
+                    //     final_time: initialHorary ? addMinutesToTime(initialHorary, s[i].time) : '--:--',
+                    //     start_time: initialHorary ? to24HourFormat(initialHorary) : null,
+                    //     end_time: initialHorary ? to24HourFormat(addMinutesToTime(initialHorary, s[i].time)) : null
+                    // });
+    //                 time = s[i].time;
+    //             }
+    //             if (time && initialHorary) {
+    //                 initialHorary = addMinutesToTime(initialHorary.toString(), time);
+    //             }
+    //         }
+    //     }
+    // });
 };
 
 const filterStaffByService = (service_id) => {
@@ -164,6 +201,22 @@ const editHorary = (horary, currentIndex) => {
     services.value[currentIndex].final_time   = addMinutesToTime(horary, services.value[currentIndex].time);
     services.value[currentIndex].start_time   = to24HourFormat(horary);
     services.value[currentIndex].end_time     = to24HourFormat(addMinutesToTime(horary, services.value[currentIndex].time));
+};
+
+const setItemTimeLine = () => {
+    items.value = [];
+    services.value.forEach(s => {
+        if (s.staff_id) {
+            items.value.push({
+                group: s.staff_id,
+                type: 'range',
+                start: new Date(`${currentDate.value}T${s.start_time}`).getTime(),
+                end: new Date(`${currentDate.value}T${s.end_time}`).getTime(),
+                itemContent: s.name,
+                cssVariables: { '--item-background': s.color }
+            });
+        }
+    });
 };
 
 const querySearchAsync = async (queryString, cb) => {
@@ -261,9 +314,9 @@ defineExpose({
                 <p class="bold text-black mb-0">Hora de cita</p>
                 <el-time-select
                     v-model="form.horary"
-                    start="07:00"
-                    step="00:10"
-                    end="23:59"
+                    start="11:00"
+                    step="00:15"
+                    end="20:00"
                     placeholder="Selecciona la hora"
                     format="hh:mm A"
                     @change="searchStaff()"
@@ -295,7 +348,7 @@ defineExpose({
                                         v-model="s.active"
                                         :label="`${s.name} (${formatCurrency(s.price)} - ${s.time} min.)`"
                                         size="large"
-                                        @change="previewServices()"
+                                        @change="(val) => previewServices(1, s, val)"
                                     >
                                         <span style="white-space: normal;">
                                             {{ s.name }} ({{ formatCurrency(s.price) }} - {{ s.time }} min.)
@@ -304,9 +357,9 @@ defineExpose({
                                 </td>
                                 <td class="p-o text-center" style="width: 20%;">
                                     <span v-if="s.active">
-                                        <font-awesome-icon class="my-btn me-2" :icon="['fas', 'minus']" @click="moreMinus(-1, (i - 1), j)" />
+                                        <font-awesome-icon class="my-btn me-2" :icon="['fas', 'minus']" @click="moreMinus(-1, (i - 1), j, s)" />
                                         <span class="bold no-select">{{ s.quantity }}</span>
-                                        <font-awesome-icon class="my-btn ms-2" :icon="['fas', 'plus']" @click="moreMinus(1, (i - 1), j)" />
+                                        <font-awesome-icon class="my-btn ms-2" :icon="['fas', 'plus']" @click="moreMinus(1, (i - 1), j, s)" />
                                     </span>
                                 </td>
                             </tr>
@@ -350,6 +403,7 @@ defineExpose({
                                 clearable
                                 :disabled="!s.start_time || !s.end_time"
                                 placeholder="Selecciona al staff"
+                                @change="setItemTimeLine()"
                             >
                                 <el-option
                                     v-for="st in filterStaffByService(s.id, s.start_time, s.end_time)"
@@ -366,12 +420,20 @@ defineExpose({
         </el-col>
         <el-col :span="24">
             <Timeline
-                v-if="dialogVisible"
                 :groups="groups"
                 :items="items"
-                :viewportMin="new Date(`2025-08-01T06:00:00`).getTime()"
-                :viewportMax="new Date(`2025-08-01T23:00:00`).getTime()"
-            />
+                :viewportMin="new Date(`${currentDate}T11:00:00`).getTime()"
+                :viewportMax="new Date(`${currentDate}T20:00:00`).getTime()"
+            >
+                <template #item="{ item }">
+                    <el-tooltip
+                        placement="top"
+                        :content="item.itemContent"
+                    >
+                        <p class="text-white text-center">{{ item.itemContent.length <= 12 ? item.itemContent : item.itemContent.substr(0, 12)+'...' }}</p>
+                    </el-tooltip>
+                </template>
+            </Timeline>
         </el-col>
     </el-row>
     <template #footer>

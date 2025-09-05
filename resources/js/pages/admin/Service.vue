@@ -178,6 +178,11 @@ const handleCurrentChange = (val) => {
                         <span v-if="(scope.row.time % 60) === 0">{{ scope.row.time / 60 }} {{ (scope.row.time / 60) === 1 ? 'hora' : 'horas' }}</span>
                     </template>
                 </el-table-column>
+                <el-table-column label="Color" align="center">
+                    <template #default="scope">
+                        <font-awesome-icon v-if="scope.row.color" :icon="['fas', 'circle']" :style="{color: scope.row.color}" />
+                    </template>
+                </el-table-column>
                 <el-table-column align="center" width="150">
                     <template #header>
                         <el-select placeholder="Estatus" v-model="search.status" @change="getServices">

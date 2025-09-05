@@ -61,6 +61,7 @@ class ServiceController extends Controller {
                 'price'            => $request->price,
                 'discounted_price' => $request->discounted_price,
                 'time'             => $request->time,
+                'color'            => $request->color,
                 'created_by'       => auth()->user()->id
             ]);
             return Response::response('El servicio se guardo correctamente.');
@@ -78,6 +79,7 @@ class ServiceController extends Controller {
             $service->price            = $request->price;
             $service->discounted_price = $request->discounted_price;
             $service->time             = $request->time;
+            $service->color            = $request->color;
             if ($request->status === 0 || $request->status === 1) {
                 $service->status = $request->status;
                 $txt             = $request->status === 1 ? 'activo' : 'desactivo';

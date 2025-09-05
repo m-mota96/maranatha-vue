@@ -12,7 +12,7 @@ class Service extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'service_type_id', 'name', 'price', 'discounted_price', 'time', 'status', 'created_by', 'updated_by', 'deleted_by', 
+        'service_type_id', 'name', 'price', 'discounted_price', 'time', 'color', 'status', 'created_by', 'updated_by', 'deleted_by', 
     ];
 
     public function service_type() {
