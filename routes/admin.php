@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\AppoimentController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\ModulePermissionController;
@@ -58,4 +59,5 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function() {
     Route::post('customer', [CustomerController::class, 'saveCustomer']);
     Route::put('customer', [CustomerController::class, 'editCustomer']);
     Route::delete('customer/{id}', [CustomerController::class, 'deleteCustomer']);
+    Route::post('appoiment', [AppoimentController::class, 'saveAppoiment']);
 });

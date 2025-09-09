@@ -24,4 +24,8 @@ class Customer extends Model
         'updated_by',
         'deleted_by',
     ];
+
+    public function appoiments() {
+        return $this->hasMany(Appoiment::class);
+    }
 }

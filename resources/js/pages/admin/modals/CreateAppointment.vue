@@ -42,6 +42,21 @@ onMounted(() => {
     currentDate.value = `${year}-${month}-${day}`;
 });
 
+const saveAppoiment = () => {
+    const response = apiClient('admin/appoiment', 'POST', {
+        customer_id: form.value.customer_id,
+        date: form.value.dateFormatted,
+        horary: form.value.horary,
+        services: services.value
+    });
+    if (response.error) {
+        showNotification(response.msj, '¡Error!', 'error', 8000);
+        return
+    }
+    dialogVisible.value = false;
+    showNotification(response.msj);
+};
+
 const showModal = () => {
     resetForm();
     for (let i = 0; i < serviceType.length; i++) {
@@ -60,6 +75,7 @@ const searchStaff = async () => {
         return
     }
     staff.value = response.data;
+    items.value = [];
     response.data.forEach(s => {
         groups.value.push({id: s.id, label: s.name});
     });
@@ -85,6 +101,7 @@ const resetForm = () => {
     form.value.services      = [];
     quantityServices.value   = 1;
     services.value           = [];
+    items.value              = [];
 };
 
 const getAvailableServiceTypes = (currentIndex) => {
@@ -439,7 +456,7 @@ defineExpose({
     <template #footer>
             <div class="dialog-footer">
                 <el-button @click="dialogVisible = false">Cancelar</el-button>
-                <el-button type="primary">
+                <el-button type="primary" @click="saveAppoiment">
                     {{ button }}
                 </el-button>
             </div>
