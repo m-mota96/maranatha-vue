@@ -163,7 +163,11 @@ class StaffController extends Controller {
             $weekDay  = date("w", strtotime($request->dateFormatted)) + 1;
             $datetime = \DateTime::createFromFormat('h:i A', $request->horary);
             $horary   = $datetime->format('H:i');
-            $staff = Staff::with(['services:id,name', 'schedules:id,staff_id,day,start_time,meal_start_time,meal_end_time,end_time'])
+            $staff    = Staff::with([
+                'appoiments.services',
+                'services:id,name',
+                'schedules:id,staff_id,day,start_time,meal_start_time,meal_end_time,end_time',
+            ])
             ->select('id', 'name', 'first_name', 'last_name')
             ->whereHas('schedules', function($q) use($weekDay, $horary) {
                 $q->where('day', $weekDay)->where('start_time', '<=', $horary)->where('end_time', '>=', $horary)->where('status', 1);

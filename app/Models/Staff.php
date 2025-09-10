@@ -26,4 +26,8 @@ class Staff extends Model
     public function services() {
         return $this->belongsToMany(Service::class)->where('status', 1)->orderBy('name');
     }
+
+    public function appoiments() {
+        return $this->belongsToMany(Appoiment::class, 'appoiment_service')->withPivot('staff_id', 'start_time', 'end_time');
+    }
 }

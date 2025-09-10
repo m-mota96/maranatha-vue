@@ -46,15 +46,15 @@ const saveAppoiment = () => {
     const response = apiClient('admin/appoiment', 'POST', {
         customer_id: form.value.customer_id,
         date: form.value.dateFormatted,
-        horary: form.value.horary,
+        horary: to24HourFormat(form.value.horary),
         services: services.value
     });
     if (response.error) {
         showNotification(response.msj, '¡Error!', 'error', 8000);
         return
     }
-    dialogVisible.value = false;
-    showNotification(response.msj);
+    // dialogVisible.value = false;
+    // showNotification(response.msj);
 };
 
 const showModal = () => {
@@ -78,6 +78,15 @@ const searchStaff = async () => {
     items.value = [];
     response.data.forEach(s => {
         groups.value.push({id: s.id, label: s.name});
+        s.appoiments.forEach(a => {
+            items.value.push({
+                group: a.pivot.staff_id,
+                type: 'range',
+                start: new Date(`${currentDate.value}T${a.pivot.start_time}`).getTime(),
+                end: new Date(`${currentDate.value}T${a.pivot.end_time}`).getTime(),
+                itemContent: 'Prueba'
+            });
+        });
     });
 };
 
@@ -144,7 +153,9 @@ const previewServices = (quantity, info, checked = true) => {
                     final_time: initialHorary ? addMinutesToTime(initialHorary, info.time) : '--:--',
                     start_time: initialHorary ? to24HourFormat(initialHorary) : null,
                     end_time: initialHorary ? to24HourFormat(addMinutesToTime(initialHorary, info.time)) : null,
-                    color: info.color
+                    color: info.color,
+                    price: info.price,
+                    discounted_price: info.discounted_price
                 });
                 break;
             case -1:

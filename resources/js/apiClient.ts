@@ -28,7 +28,7 @@ const apiClient = async (
     const response = await axios(`${window.location.origin}/${url}`, options);
     return response.data ?? response;
   } catch (error: any) {
-    console.error(error);
+    // console.error(error.response);
     return {
       error: true,
       msj:

@@ -24,4 +24,12 @@ class Appoiment extends Model
     public function status() {
         return $this->belongsTo(AppoimentStatus::class);
     }
+
+    public function services() {
+        return $this->belongsToMany(Service::class);
+    }
+
+    public function staffs() {
+        return $this->belongsToMany(Staff::class);
+    }
 }

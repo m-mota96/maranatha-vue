@@ -20,7 +20,7 @@ return new class extends Migration
             $table->date('date');
             $table->string('horary');
             $table->decimal('cost', 10, 2);
-            $table->text('observations');
+            $table->text('observations')->nullable();
             $table->integer('created_by');
             $table->integer('updated_by')->nullable();
             $table->integer('deleted_by')->nullable();

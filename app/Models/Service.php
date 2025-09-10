@@ -22,4 +22,8 @@ class Service extends Model
     public function staff() {
         return $this->belongsToMany(Staff::class)->where('status', 1)->orderBy('name');
     }
+
+    public function appoiments() {
+        return $this->belongToMany(Appoiment::class);
+    }
 }
