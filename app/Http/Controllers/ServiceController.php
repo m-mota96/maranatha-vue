@@ -34,7 +34,7 @@ class ServiceController extends Controller {
             $search     = $request->search;
             $order      = $request->order;
 
-            $query  = Service::with(['service_type']);
+            $query = Service::with(['service_type']);
             if ($search['service_type_id']) $query->where('service_type_id', $search['service_type_id']);
 
             if ($search['name']) $query->whereRaw('name LIKE "%'.$search['name'].'%"');

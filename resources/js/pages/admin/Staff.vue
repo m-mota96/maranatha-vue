@@ -120,7 +120,7 @@ const handleCurrentChange = (val) => {
 <template>
     <Layout :menu="menu" :module="module">
         <el-col class="mb-2" :span="4" :offset="15">
-            <label for="order">Ordernar por</label>
+            <label for="order">Ordenar por</label>
             <el-select v-model="order.orderBy" @change="getStaff" id="order">
                 <el-option :key="0" label="Id" value="id" />
                 <el-option :key="1" label="Puesto" value="position_id" />

@@ -12,12 +12,12 @@ class AppointmentController extends Controller {
         try {
             // dd($request->all());
             $appointment = Appointment::create([
-                'customer_id'         => $request->customer_id,
+                'customer_id'           => $request->customer_id,
                 'appointment_status_id' => 1,
-                'date'                => $request->date,
-                'horary'              => $request->horary,
-                'cost'                => 100,
-                'created_by'          => auth()->user()->id
+                'date'                  => $request->date,
+                'horary'                => $request->horary,
+                'cost'                  => 100,
+                'created_by'            => auth()->user()->id
             ]);
             $services = $request->services;
             for ($i = 0; $i < sizeof($services); $i++) { 
@@ -30,6 +30,26 @@ class AppointmentController extends Controller {
                 ]);
             }
             return Response::response('La cita se agendó correctamente.');
+        } catch (\Throwable $th) {
+            return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
+        }
+    }
+
+    public function getAppointments(Request $request) {
+        try {
+            $pagination = $request->pagination;
+            $page       = $pagination['currentPage']; // Página actual
+            $limit      = $pagination['pageSize']; // Tamaño de la página
+            $offset     = ($page - 1) * $limit; // Calcular el offset
+            $search     = $request->search;
+            $order      = $request->order;
+
+            $query = Appointment::with(['customer:id,name', 'status', 'services', 'createdBy:id,name'])
+            ->where('date', $search['currentDate']);
+
+            $appointments = $query->offset($offset)->limit($limit)->orderBy($order['orderBy'], $order['order'])->get();
+            $totalRows    = $query->count();
+            return Response::response(null, ['appointments' => $appointments, 'totalRows' => $totalRows]);
         } catch (\Throwable $th) {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
         }

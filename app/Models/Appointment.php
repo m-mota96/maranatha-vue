@@ -22,7 +22,7 @@ class Appointment extends Model
     }
 
     public function status() {
-        return $this->belongsTo(AppointmentStatus::class);
+        return $this->belongsTo(AppointmentStatus::class, 'appointment_status_id');
     }
 
     public function services() {
@@ -31,5 +31,9 @@ class Appointment extends Model
 
     public function staffs() {
         return $this->belongsToMany(Staff::class);
+    }
+
+    public function createdBy() {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

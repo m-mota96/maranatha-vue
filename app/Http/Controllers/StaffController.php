@@ -170,6 +170,7 @@ class StaffController extends Controller {
                 'schedules:id,staff_id,day,start_time,meal_start_time,meal_end_time,end_time',
             ])
             ->select('id', 'name', 'first_name', 'last_name')
+            ->where('status', 1)
             ->whereHas('schedules', function($q) use($weekDay, $horary) {
                 $q->where('day', $weekDay)->where('start_time', '<=', $horary)->where('end_time', '>=', $horary)->where('status', 1);
             })

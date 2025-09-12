@@ -37,25 +37,56 @@ const items                = ref([]);
 const timeline             = ref(null);
 const initialViewportRange = { start: 400000, end: 700000 };
 const viewport             = ref({ ...initialViewportRange });
+const errors               = ref({
+    customer: false,
+    horary: false,
+    horary_invalid: false,
+});
 
 onMounted(() => {
     form.value.dateFormatted = formatDate(form.value.date);
     resetViewport();
 });
 
-const saveAppointment = () => {
-    const response = apiClient('admin/appointment', 'POST', {
-        customer_id: form.value.customer_id,
-        date: form.value.dateFormatted,
-        horary: to24HourFormat(form.value.horary),
-        services: services.value
-    });
-    if (response.error) {
-        showNotification(response.msj, '¡Error!', 'error', 8000);
-        return
+const saveAppointment = async () => {
+    if (validate()) {
+        const response = await apiClient('admin/appointment', 'POST', {
+            customer_id: form.value.customer_id,
+            date: form.value.dateFormatted,
+            horary: to24HourFormat(form.value.horary),
+            services: services.value
+        });
+        if (response.error) {
+            showNotification(response.msj, '¡Error!', 'error', 8000);
+            return
+        }
+        dialogVisible.value = false;
+        showNotification(response.msj);
     }
-    // dialogVisible.value = false;
-    // showNotification(response.msj);
+};
+
+const validate = () => {
+    resetErrors();
+    let valid = true;
+    if (!form.value.customer_id) {
+        errors.value.customer = true;
+        valid                 = false;
+    }
+    if (!form.value.horary) {
+        errors.value.horary = true;
+        valid               = false;
+    } else {
+        const today = new Date();
+        if (formatDate(form.value.date) === formatDate(today)) {
+            const options = { hour: '2-digit', hour12: true, minute: '2-digit' };
+            const formattedTime = today.toLocaleTimeString('en-US', options);
+            if (form.value.horary.substring(0, 5) < formattedTime.substring(0, 5)) {
+                errors.value.horary_invalid = true;
+                valid                       = false;
+            }
+        }
+    }
+    return valid;
 };
 
 const showModal = () => {
@@ -80,6 +111,8 @@ const searchStaff = async (resetHorary = false) => {
     const currentDate = form.value.date;
     currentDate.setHours(0, 0, 0, 0);
     if (resetHorary) form.value.horary = formatDate(currentDate) === formatDate(today) ? roundToStep(new Date(), 15) : '11:00 AM';
+    errors.value.horary         = false;
+    errors.value.horary_invalid = false;
     if (form.value.date && form.value.horary) {
         staff.value              = [];
         form.value.dateFormatted = formatDate(form.value.date);
@@ -134,6 +167,13 @@ const resetForm = () => {
     services.value           = [];
     items.value              = [];
     staff.value              = [];
+    resetErrors();
+};
+
+const resetErrors = () => {
+    errors.value.customer       = false;
+    errors.value.horary         = false;
+    errors.value.horary_invalid = false;
 };
 
 const getAvailableServiceTypes = (currentIndex) => {
@@ -193,33 +233,6 @@ const previewServices = (quantity, info, checked = true) => {
         services.value = services.value.filter(s => s.id !== info.id);
     }
     setItemTimeLine();
-    // services.value = [];
-    // // let initialHorary = to24HourFormat(form.value.horary);
-    // let initialHorary = form.value.horary ? form.value.horary : '';
-    // let time          = null;
-    // form.value.services.forEach(s => {
-    //     for (let i = 0; i < s.length; i++) {
-    //         if (s[i].active) {
-    //             for (let j = 0; j < s[i].quantity; j++) {
-                    // services.value.push({
-                    //     uid: generateUID(),
-                    //     id: s[i].id,
-                    //     name: s[i].name+` (${s[i].time} min.)`,
-                    //     time: s[i].time,
-                    //     staff_id: '',
-                    //     initial_time: initialHorary,
-                    //     final_time: initialHorary ? addMinutesToTime(initialHorary, s[i].time) : '--:--',
-                    //     start_time: initialHorary ? to24HourFormat(initialHorary) : null,
-                    //     end_time: initialHorary ? to24HourFormat(addMinutesToTime(initialHorary, s[i].time)) : null
-                    // });
-    //                 time = s[i].time;
-    //             }
-    //             if (time && initialHorary) {
-    //                 initialHorary = addMinutesToTime(initialHorary.toString(), time);
-    //             }
-    //         }
-    //     }
-    // });
 };
 
 const filterStaffByService = (service_id) => {
@@ -389,6 +402,8 @@ defineExpose({
                     </el-tooltip>
                 </p>
                 <el-autocomplete
+                    class="el-form-item"
+                    :class="{'is-error': errors.customer}"
                     v-model="form.customer"
                     :fetch-suggestions="querySearchAsync"
                     placeholder="Escribe para buscar un cliente"
@@ -397,6 +412,7 @@ defineExpose({
                     :debounce="300"
                     clearable
                 />
+                <span class="text-danger fs-small" v-if="errors.customer">El cliente es obligatorio y debes elegir uno de la lista.</span>
             </el-col>
             <el-col :span="24">
                 <p class="bold text-black mb-0">Fecha de cita</p>
@@ -407,6 +423,8 @@ defineExpose({
             <el-col :span="24" class="mb-3">
                 <p class="bold text-black mb-0">Hora de cita</p>
                 <el-time-select
+                    class="el-form-item"
+                    :class="{'is-error': errors.horary || errors.horary_invalid}"
                     v-model="form.horary"
                     start="11:00"
                     step="00:15"
@@ -415,6 +433,8 @@ defineExpose({
                     format="hh:mm A"
                     @change="searchStaff()"
                 />
+                <span class="text-danger fs-small" v-if="errors.horary">La hora de la cita es obligatoria.</span>
+                <span class="text-danger fs-small" v-if="errors.horary_invalid">La hora de la cita no puede ser anterior a la hora actual.</span>
             </el-col>
             <el-col :span="24">
                 <p class="bold text-black mb-0 relative">
