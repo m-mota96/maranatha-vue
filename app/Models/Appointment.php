@@ -4,11 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Appoiment extends Model
+class Appointment extends Model
 {
     protected $fillable = [
         'customer_id',
-        'appoiment_status_id',
+        'appointment_status_id',
         'date',
         'horary',
         'cost',
@@ -22,7 +22,7 @@ class Appoiment extends Model
     }
 
     public function status() {
-        return $this->belongsTo(AppoimentStatus::class);
+        return $this->belongsTo(AppointmentStatus::class);
     }
 
     public function services() {

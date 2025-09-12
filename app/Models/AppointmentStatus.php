@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class AppoimentStatus extends Model
+class AppointmentStatus extends Model
 {
     public $timestamps = false;
 
@@ -12,7 +12,7 @@ class AppoimentStatus extends Model
         'name', 
     ];
 
-    public function appoiments() {
-        return $this->hasMany(Appoiment::class);
+    public function appointments() {
+        return $this->hasMany(Appointment::class);
     }
 }

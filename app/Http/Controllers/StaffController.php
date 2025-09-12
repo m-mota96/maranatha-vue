@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Http\Traits\Modules;
 use App\Http\Traits\Response;
+use App\Models\AppointmentServiceStaff;
 use App\Models\Position;
 use App\Models\Service;
 use App\Models\Staff;
@@ -160,11 +161,11 @@ class StaffController extends Controller {
 
     public function searchStaff(Request $request) {
         try {
-            $weekDay  = date("w", strtotime($request->dateFormatted)) + 1;
+            $weekDay  = date("w", strtotime($request->date)) + 1;
             $datetime = \DateTime::createFromFormat('h:i A', $request->horary);
             $horary   = $datetime->format('H:i');
             $staff    = Staff::with([
-                'appoiments.services',
+                'appointments.services',
                 'services:id,name',
                 'schedules:id,staff_id,day,start_time,meal_start_time,meal_end_time,end_time',
             ])
@@ -174,7 +175,15 @@ class StaffController extends Controller {
             })
             ->orderBy('name')
             ->get();
-            return Response::response(null, $staff);
+            
+            $servicesForStaff = AppointmentServiceStaff::with([
+                'service:id,name,color',
+                'staff:id,name,first_name,last_name'
+            ])->whereHas('appointment', function($q) use($request) {
+                $q->where('date', $request->date);
+            })->get();
+            
+            return Response::response(null, ['staff' => $staff, 'servicesForStaff' => $servicesForStaff]);
         } catch (\Throwable $th) {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
         }

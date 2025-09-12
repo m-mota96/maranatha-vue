@@ -2,7 +2,7 @@
 import apiClient from '@/apiClient';
 import { showNotification } from '@/notification';
 import { addMinutesToTime } from '@/addMinutesToTime';
-import { ref, defineExpose, onMounted } from 'vue';
+import { ref, defineExpose, onMounted, watch } from 'vue';
 import CreateEditCustomer from './CreateEditCustomer.vue';
 import { Timeline } from 'vue-timeline-chart';
 import 'vue-timeline-chart/style.css';
@@ -22,7 +22,7 @@ const button                = ref('Guardar');
 const staff                 = ref([]);
 const quantityServices      = ref(1);
 const services              = ref([]);
-const currentDate           = ref(new Date());
+const servicesForStaff      = ref([]);
 const form                  = ref({
     customer_id: null,
     customer: '',
@@ -32,18 +32,19 @@ const form                  = ref({
     service_type: [],
     services: []
 });
-const groups = ref([]);
-const items  = ref([]);
+const groups               = ref([]);
+const items                = ref([]);
+const timeline             = ref(null);
+const initialViewportRange = { start: 400000, end: 700000 };
+const viewport             = ref({ ...initialViewportRange });
 
 onMounted(() => {
-    const year        = currentDate.value.getFullYear();
-    const month       = (currentDate.value.getMonth() + 1).toString().padStart(2, '0');
-    const day         = currentDate.value.getDate().toString().padStart(2, '0');
-    currentDate.value = `${year}-${month}-${day}`;
+    form.value.dateFormatted = formatDate(form.value.date);
+    resetViewport();
 });
 
-const saveAppoiment = () => {
-    const response = apiClient('admin/appoiment', 'POST', {
+const saveAppointment = () => {
+    const response = apiClient('admin/appointment', 'POST', {
         customer_id: form.value.customer_id,
         date: form.value.dateFormatted,
         horary: to24HourFormat(form.value.horary),
@@ -59,6 +60,7 @@ const saveAppoiment = () => {
 
 const showModal = () => {
     resetForm();
+    searchStaff();
     for (let i = 0; i < serviceType.length; i++) {
         form.value.service_type.push('');
         form.value.services.push('');
@@ -66,26 +68,46 @@ const showModal = () => {
     dialogVisible.value = true;
 };
 
-const searchStaff = async () => {
-    // previewServices();
-    form.value.dateFormatted = formatDate(form.value.date);
-    const response           = await apiClient('admin/searchStaff', 'GET', { dateFormatted: form.value.dateFormatted, horary: form.value.horary });
-    if (response.error) {
-        showNotification(response.msj, '¡Error!', 'error', 7500);
+const searchStaff = async (resetHorary = false) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (form.value.date < today) {
+        resetForm();
+        showNotification('No puedes elegir fechas pasadas.', '¡Error!', 'error', 7500);
         return
     }
-    staff.value = response.data;
-    items.value = [];
-    response.data.forEach(s => {
-        groups.value.push({id: s.id, label: s.name});
-        s.appoiments.forEach(a => {
-            items.value.push({
-                group: a.pivot.staff_id,
-                type: 'range',
-                start: new Date(`${currentDate.value}T${a.pivot.start_time}`).getTime(),
-                end: new Date(`${currentDate.value}T${a.pivot.end_time}`).getTime(),
-                itemContent: 'Prueba'
-            });
+    const currentDate = form.value.date;
+    currentDate.setHours(0, 0, 0, 0);
+    if (resetHorary) form.value.horary = formatDate(currentDate) === formatDate(today) ? roundToStep(new Date(), 15) : '11:00 AM';
+    if (form.value.date && form.value.horary) {
+        staff.value              = [];
+        form.value.dateFormatted = formatDate(form.value.date);
+        const response           = await apiClient('admin/searchStaff', 'GET', { date: form.value.dateFormatted, horary: form.value.horary });
+        if (response.error) {
+            showNotification(response.msj, '¡Error!', 'error', 7500);
+            return
+        }
+        staff.value  = response.data.staff;
+        groups.value = [];
+        items.value  = [];
+        response.data.staff.forEach(s => {
+            groups.value.push({id: s.id, label: s.name});
+        });
+        servicesForStaff.value = response.data.servicesForStaff;
+        setServicesForStaff(response.data.servicesForStaff);
+    }
+};
+
+const setServicesForStaff = (_servicesForStaff) => {
+    _servicesForStaff.forEach(st => {
+        items.value.push({
+            group: st.staff_id,
+            type: 'range',
+            start: new Date(`${form.value.dateFormatted}T${st.start_time}`).getTime(),
+            end: new Date(`${form.value.dateFormatted}T${st.end_time}`).getTime(),
+            itemContent: st.service.name,
+            cssVariables: { '--item-background': st.service.color }
         });
     });
 };
@@ -105,12 +127,13 @@ const resetForm = () => {
     form.value.customer      = '';
     form.value.date          = new Date();
     form.value.dateFormatted = '';
-    form.value.horary        = '';
+    form.value.horary        = roundToStep(new Date(), 15);
     form.value.service_type  = [];
     form.value.services      = [];
     quantityServices.value   = 1;
     services.value           = [];
     items.value              = [];
+    staff.value              = [];
 };
 
 const getAvailableServiceTypes = (currentIndex) => {
@@ -206,7 +229,12 @@ const filterStaffByService = (service_id) => {
 };
 
 const isStaffBusy = (staffId, initial_time, final_time) => {
-    return services.value.some(s =>
+    const allServices = [
+        ...(services.value || []),
+        ...(servicesForStaff.value || [])
+    ];
+
+    return allServices.some(s =>
         s.staff_id === staffId &&
         (
             (initial_time >= s.start_time && initial_time < s.end_time) ||
@@ -233,18 +261,56 @@ const editHorary = (horary, currentIndex) => {
 
 const setItemTimeLine = () => {
     items.value = [];
+    setServicesForStaff(servicesForStaff.value);
     services.value.forEach(s => {
         if (s.staff_id) {
             items.value.push({
                 group: s.staff_id,
                 type: 'range',
-                start: new Date(`${currentDate.value}T${s.start_time}`).getTime(),
-                end: new Date(`${currentDate.value}T${s.end_time}`).getTime(),
+                start: new Date(`${form.value.dateFormatted}T${s.start_time}`).getTime(),
+                end: new Date(`${form.value.dateFormatted}T${s.end_time}`).getTime(),
                 itemContent: s.name,
                 cssVariables: { '--item-background': s.color }
             });
         }
     });
+};
+
+const resetViewport = () => {
+    if (timeline.value) {
+        timeline.value.setViewport(new Date(`${form.value.dateFormatted}T11:00`).getTime(), new Date(`${form.value.dateFormatted}T20:00`).getTime());
+    }
+};
+
+const handleViewportChange = (newViewport) => {
+    viewport.value = newViewport;
+    resetViewport();
+};
+
+const roundToStep = (date, stepMinutes = 15) => {
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    // redondeo al múltiplo de step
+    const roundedMinutes = Math.ceil(minutes / stepMinutes) * stepMinutes;
+    
+    let finalHours = hours;
+    let finalMinutes = roundedMinutes;
+    
+    // si se pasa de 60 minutos, sumamos 1 hora
+    if (roundedMinutes === 60) {
+        finalHours += 1;
+        finalMinutes = 0;
+    }
+
+    // conversión a 12h
+    let hours12 = finalHours % 12;
+    hours12 = hours12 === 0 ? 12 : hours12;
+    const ampm = finalHours >= 12 ? "PM" : "AM";
+
+    const hoursStr = hours12.toString().padStart(2, "0");
+    const minutesStr = finalMinutes.toString().padStart(2, "0");
+
+    return `${hoursStr}:${minutesStr} ${ampm}`;
 };
 
 const querySearchAsync = async (queryString, cb) => {
@@ -284,7 +350,7 @@ const formatCurrency = (value) => {
 };
 
 const to24HourFormat = (time12h) => {
-    const [time, modifier] = time12h.split(' '); // "10:00", "PM"
+    const [time, modifier] = time12h.split(' ');
     let [hours, minutes] = time.split(':').map(Number);
 
     if (modifier === 'PM' && hours < 12) hours += 12;
@@ -334,7 +400,7 @@ defineExpose({
             </el-col>
             <el-col :span="24">
                 <p class="bold text-black mb-0">Fecha de cita</p>
-                <el-calendar class="w-100" v-model="form.date" />
+                <el-calendar class="w-100" v-model="form.date" @update:modelValue="searchStaff(true)" />
             </el-col>
         </el-col>
         <el-col :span="6">
@@ -414,7 +480,7 @@ defineExpose({
                             <el-time-select
                                 v-if="form.horary"
                                 v-model="s.initial_time"
-                                start="07:00"
+                                start="00:00"
                                 step="00:10"
                                 end="23:59"
                                 placeholder="Selecciona la hora"
@@ -448,10 +514,15 @@ defineExpose({
         </el-col>
         <el-col :span="24">
             <Timeline
+                ref="timeline"
+                v-if="staff.length"
                 :groups="groups"
                 :items="items"
-                :viewportMin="new Date(`${currentDate}T11:00:00`).getTime()"
-                :viewportMax="new Date(`${currentDate}T20:00:00`).getTime()"
+                :viewportMin="new Date(`${form.dateFormatted}T11:00`).getTime()"
+                :viewportMax="new Date(`${form.dateFormatted}T20:00`).getTime()"
+                :initialViewportStart="initialViewportRange.start"
+                :initialViewportEnd="initialViewportRange.end"
+                @changeViewport="handleViewportChange"
             >
                 <template #item="{ item }">
                     <el-tooltip
@@ -467,7 +538,8 @@ defineExpose({
     <template #footer>
             <div class="dialog-footer">
                 <el-button @click="dialogVisible = false">Cancelar</el-button>
-                <el-button type="primary" @click="saveAppoiment">
+                <el-button type="warning" @click="resetForm">Limpiar formulario</el-button>
+                <el-button type="primary" @click="saveAppointment">
                     {{ button }}
                 </el-button>
             </div>
@@ -476,8 +548,12 @@ defineExpose({
     <CreateEditCustomer ref="createEditCustomerRef" />
 </template>
 
-<style scoped>
+<style>
 .no-select {
     user-select: none;
+}
+.disabled-date {
+    color: #ccc;
+    pointer-events: none; /* no permite click */
 }
 </style>

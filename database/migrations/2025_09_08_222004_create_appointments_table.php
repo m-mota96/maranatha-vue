@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('appoiments', function (Blueprint $table) {
+        Schema::create('appointments', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('customer_id');
             $table->foreign('customer_id')->references('id')->on('customers');
-            $table->unsignedBigInteger('appoiment_status_id');
-            $table->foreign('appoiment_status_id')->references('id')->on('appoiment_statuses');
+            $table->unsignedBigInteger('appointment_status_id');
+            $table->foreign('appointment_status_id')->references('id')->on('appointment_statuses');
             $table->date('date');
             $table->string('horary');
             $table->decimal('cost', 10, 2);
@@ -33,6 +33,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('appoiments');
+        Schema::dropIfExists('appointments');
     }
 };
