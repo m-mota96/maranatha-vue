@@ -54,4 +54,13 @@ class AppointmentController extends Controller {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
         }
     }
+
+    public function getAppointment($id) {
+        try {
+            $appointment = Appointment::with(['customer:id,name', 'status', 'services'])->find($id);
+            return Response::response(null, $appointment);
+        } catch (\Throwable $th) {
+            return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
+        }
+    }
 }

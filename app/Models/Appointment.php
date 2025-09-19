@@ -26,7 +26,7 @@ class Appointment extends Model
     }
 
     public function services() {
-        return $this->belongsToMany(Service::class);
+        return $this->belongsToMany(Service::class)->withPivot(['price', 'start_time', 'end_time'])->orderBy('start_time');
     }
 
     public function staffs() {

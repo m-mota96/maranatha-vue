@@ -2,7 +2,7 @@
 import apiClient from '@/apiClient';
 import { showNotification } from '@/notification';
 import { addMinutesToTime } from '@/addMinutesToTime';
-import { ref, defineExpose, onMounted, watch } from 'vue';
+import { ref, defineExpose, onMounted } from 'vue';
 import CreateEditCustomer from './CreateEditCustomer.vue';
 import { Timeline } from 'vue-timeline-chart';
 import 'vue-timeline-chart/style.css';

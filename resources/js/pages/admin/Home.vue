@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue';
 import Layout from './Layout.vue';
 import CreateEditCustomer from './modals/CreateEditCustomer.vue';
 import CreateAppointment from './modals/CreateAppointment.vue';
+import CreateSale from './modals/CreateSale.vue';
 import apiClient from '@/apiClient';
 import { showNotification } from '@/notification';
 
@@ -19,6 +20,7 @@ const { menu, serviceType } = defineProps({
 
 const createEditCustomerRef = ref(null);
 const createAppoimentRef    = ref(null);
+const createSaleRef         = ref(null);
 const appointments          = ref([]);
 const search                = ref({
     currentDate: '',
@@ -65,7 +67,7 @@ const setClass = (_status) => {
 
 const time = (time)=> {
     let hour = parseInt(time.substring(0, 2));
-    const txt = (hour > 12) ? 'PM' : 'AM';
+    const txt = (hour >= 12) ? 'PM' : 'AM';
     hour = (hour > 12) ? (hour - 12) : hour;
     hour = (hour < 10) ? '0'+hour : hour;
     return hour+time.substring(2, 5)+' '+txt;
@@ -77,6 +79,10 @@ const newCustomer = (data = null) => {
 
 const newAppoiment = () => {
     createAppoimentRef.value?.showModal();
+};
+
+const newSale = (appointmentId) => {
+    createSaleRef.value?.showModal(appointmentId);
 };
 
 const handleSizeChange = (val) => {
@@ -115,7 +121,7 @@ const handleCurrentChange = (val) => {
                                             <th>Servicios</th>
                                             <th class="text-center">Estatus</th>
                                             <th>Agendada por</th>
-                                            <th>Acciones</th>
+                                            <th class="text-center">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -133,12 +139,13 @@ const handleCurrentChange = (val) => {
                                             </td>
                                             <td class="text-center bold" :class="setClass(a.status.name)" width="10%">{{ a.status.name }}</td>
                                             <td>{{ a.created_by.name }}</td>
-                                            <td>
+                                            <td class="text-center">
                                                 <el-button-group>
                                                     <el-tooltip content="Realizar venta" effect="customized" placement="top">
                                                         <el-button
                                                             type="success"
                                                             class="ps-2 pe-2"
+                                                            @click="newSale(a.id)"
                                                         >
                                                             <font-awesome-icon :icon="['fas', 'dollar-sign']" />
                                                         </el-button>
@@ -228,6 +235,7 @@ const handleCurrentChange = (val) => {
     </Layout>
     <CreateEditCustomer ref="createEditCustomerRef" />
     <CreateAppointment ref="createAppoimentRef" :service-type="serviceType" />
+    <CreateSale ref="createSaleRef" />
 </template>
 
 <style scoped>

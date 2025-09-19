@@ -61,4 +61,5 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function() {
     Route::delete('customer/{id}', [CustomerController::class, 'deleteCustomer']);
     Route::post('appointment', [AppointmentController::class, 'saveAppointment']);
     Route::get('appointments', [AppointmentController::class, 'getAppointments']);
+    Route::get('appointment/{id}', [AppointmentController::class, 'getAppointment']);
 });
