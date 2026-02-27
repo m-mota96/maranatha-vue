@@ -3,8 +3,7 @@ import { ref, onMounted } from 'vue';
 import Layout from './Layout.vue';
 import apiClient from '@/apiClient';
 import { showNotification } from '@/notification';
-import CreateEditCustomer from './modals/CreateEditCustomer.vue';
-import { dateEs } from '@/dateEs';
+import CreateEditProduct from './modals/CreateEditProduct.vue';
 
 const { module, menu } = defineProps({
     module: {
@@ -17,18 +16,18 @@ const { module, menu } = defineProps({
     }
 });
 
-const createEditCustomerRef = ref(null);
-const customers             = ref([]);
-const pagination            = ref({
+const createEditProductRef = ref(null);
+const products             = ref([]);
+const pagination           = ref({
     currentPage: 1,
     pageSize: 10,
     total: 0
 });
 const search = ref({
     name: '',
-    email: '',
-    phone: '',
-    rfc: '',
+    brand:'',
+    price: '',
+    discounted_price: '',
     status: ''
 });
 const order = ref({
@@ -37,22 +36,22 @@ const order = ref({
 });
 
 onMounted(() => {
-    getCustomers();
+    getProducts();
 });
 
-const getCustomers = async () => {
-    const response = await apiClient('admin/customers', 'GET', {pagination: pagination.value, search: search.value, order: order.value});
+const getProducts = async () => {
+    const response = await apiClient('admin/products', 'GET', {pagination: pagination.value, search: search.value, order: order.value});
     if (response.error) {
         showNotification(response.msj, '¡Error!', 'error', 7500);
         return
     }
-    customers.value = response.data.customers;
+    products.value = response.data.products;
     pagination.value.total = response.data.totalRows;
 };
 
-const statusCustomer = async (_customer) => {
-    _customer.status = _customer.status === 1 ? 0 : 1;
-    const response   = await apiClient('admin/customer', 'PUT', _customer);
+const statusProduct = async (_product) => {
+    _product.status = _product.status ? false : true;
+    const response  = await apiClient('admin/product', 'PUT', _product);
     if (response.error) {
         showNotification(response.msj, '¡Error!', 'error');
         return
@@ -60,36 +59,43 @@ const statusCustomer = async (_customer) => {
     showNotification(response.msj);
 };
 
-const deleteCustomer = async (id) => {
-    const response = await apiClient(`admin/customer/${id}`, 'DELETE');
+const deleteProduct = async (id) => {
+    const response = await apiClient(`admin/product/${id}`, 'DELETE');
     if (response.error) {
         showNotification(response.msj, '¡Error!', 'error');
         return
     }
-    getCustomers();
+    getProducts();
     showNotification(response.msj);
 };
 
 const openModal = (data = null) => {
-    createEditCustomerRef.value?.showModal(data);
+    createEditProductRef.value?.showModal(data);
 };
 
 const resetFilters = () => {
     search.value.name             = '';
-    search.value.email            = '';
-    search.value.phone            = '';
-    search.value.rfc              = '';
+    search.value.brand            = '';
+    search.value.price            = '';
+    search.value.discounted_price = '';
     search.value.status           = '';
     order.value.orderBy           = 'created_at';
     order.value.order             = 'DESC';
-    getCustomers();
+    getProducts();
 }
 
+const formatCurrency = (value) => {
+    return new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: 'MXN'
+    }).format(value);
+};
+
 const handleSizeChange = (val) => {
-    getCustomers();
+    getProducts();
 }
 const handleCurrentChange = (val) => {
-    getCustomers();
+    getProducts();
 }
 </script>
 
@@ -97,18 +103,16 @@ const handleCurrentChange = (val) => {
     <Layout :menu="menu" :module="module">
         <el-col class="mb-2" :span="4" :offset="15">
             <label for="order">Ordenar por</label>
-            <el-select v-model="order.orderBy" @change="getCustomers" id="order">
+            <el-select v-model="order.orderBy" @change="getProducts" id="order">
                 <el-option :key="0" label="Fecha de creación" value="created_at" />
-                <el-option :key="1" label="Nombre" value="name" />
-                <el-option :key="2" label="Correo electrónico" value="email" />
-                <el-option :key="3" label="Teléfono" value="phone" />
-                <el-option :key="4" label="Razón social" value="company_name" />
-                <el-option :key="5" label="Rfc" value="rfc" />
+                <el-option :key="1" label="Nombre del producto" value="name" />
+                <el-option :key="2" label="Precio" value="price" />
+                <el-option :key="3" label="Precio con descuento" value="discounted_price" />
             </el-select>
         </el-col>
         <el-col class="mb-2 ps-3" :span="4">
             <br>
-            <el-select v-model="order.order" @change="getCustomers">
+            <el-select v-model="order.order" @change="getProducts">
                 <el-option :key="0" label="Ascendente" value="ASC" />
                 <el-option :key="1" label="Descendente" value="DESC" />
             </el-select>
@@ -125,66 +129,82 @@ const handleCurrentChange = (val) => {
             </el-tooltip>
         </el-col>
         <el-col :span="24" class="table-wrapper">
-            <el-table :data="customers" stripe empty-text="Ningún dato disponible en esta tabla" header-cell-class-name="text-dark bold">
+            <el-table :data="products" stripe empty-text="Ningún dato disponible en esta tabla" header-cell-class-name="text-dark bold">
                 <el-table-column prop="id" label="#" width="70" align="center" />
-                <el-table-column prop="name">
+                <el-table-column prop="barcode" label="Código de barras" />
+                <el-table-column>
                     <template #header>
-                        <el-input placeholder="Nombre" title="Escribe para buscar" v-model="search.name" @input="getCustomers" clearable />
+                        <el-input placeholder="Nombre del producto" title="Escribe para buscar" v-model="search.name" @input="getProducts" clearable />
                     </template>
-                </el-table-column>
-                <el-table-column label="Fecha de nacimiento">
                     <template #default="scope">
-                        {{ scope.row.birthdate ? dateEs(scope.row.birthdate, '/', 1) : '' }}
+                        {{ scope.row.name }} 
+                        {{ scope.row.content ? scope.row.content : '' }} 
+                        {{ scope.row.abreviation ? scope.row.abreviation : '' }}
                     </template>
                 </el-table-column>
-                <el-table-column prop="email">
+                <el-table-column prop="brand">
                     <template #header>
-                        <el-input placeholder="Correo electrónico" title="Escribe para buscar" v-model="search.email" @input="getCustomers" clearable />
+                        <el-input placeholder="Marca" title="Escribe para buscar" v-model="search.brand" @input="getProducts" clearable />
                     </template>
                 </el-table-column>
-                <el-table-column prop="phone">
-                    <template #header>
-                        <el-input placeholder="Teléfono" title="Escribe para buscar" v-model="search.phone" @input="getCustomers" clearable />
-                    </template>
-                </el-table-column>
-                <el-table-column prop="company_name" label="Razón social"/>
-                <el-table-column prop="rfc">
-                    <template #header>
-                        <el-input placeholder="Rfc" title="Escribe para buscar" v-model="search.rfc" @input="getCustomers" clearable />
-                    </template>
-                </el-table-column>
-                <el-table-column prop="address" label="Dirección"/>
                 <el-table-column align="center" width="150">
                     <template #header>
-                        <el-select placeholder="Estatus" v-model="search.status" @change="getCustomers" clearable>
+                        <el-input placeholder="Precio" title="Escribe para buscar" v-model="search.price" @input="getProducts" clearable />
+                    </template>
+                    <template #default="scope">
+                        {{ formatCurrency(scope.row.price) }}
+                    </template>
+                </el-table-column>
+                <el-table-column align="center" width="150">
+                    <template #header>
+                        <el-input placeholder="Precio con descuento" title="Escribe para buscar" v-model="search.discounted_price" @input="getProducts" clearable />
+                    </template>
+                    <template #default="scope">
+                        {{ formatCurrency(scope.row.discounted_price) }}
+                    </template>
+                </el-table-column>
+                <el-table-column label="Existencias" align="center">
+                    <template #default="scope">
+                        <span v-if="scope.row.type_sale === 'pza'">
+                            {{ parseInt(scope.row.inputs - scope.row.outputs) }}
+                        </span>
+                        <span v-if="scope.row.type_sale === 'kg'">
+                            {{ scope.row.inputs - scope.row.outputs }}
+                        </span>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="description" label="Descripción" />
+                <el-table-column align="center" width="150">
+                    <template #header>
+                        <el-select placeholder="Estatus" v-model="search.status" @change="getProducts" clearable>
                             <el-option :value="1" label="Activo" />
                             <el-option :value="0" label="Inactivo" />
                         </el-select>
                     </template>
                     <template #default="scope">
-                        <span class="text-success bold" v-if="scope.row.status == 1">Activo</span>
-                        <span class="text-danger bold" v-if="scope.row.status == 0">Inactivo</span>
+                        <span class="text-success bold" v-if="scope.row.status">Activo</span>
+                        <span class="text-danger bold" v-if="!scope.row.status">Inactivo</span>
                     </template>
                 </el-table-column>
                 <el-table-column width="150" align="center">
                     <template #header>
-                        <el-tooltip content="Nuevo cliente" effect="customized" placement="top">
-                            <el-button class="btn-success ps-2 pe-2" @click="openModal()">
+                        <el-tooltip content="Nuevo producto" effect="customized" placement="top">
+                            <el-button class="btn-success" @click="openModal()">
                                 <font-awesome-icon :icon="['fas', 'plus']" />
                             </el-button>
                         </el-tooltip>
                     </template>
                     <template #default="scope">
                         <el-button-group>
-                            <el-tooltip content="Editar cliente" effect="customized" placement="top">
+                            <el-tooltip content="Editar producto" effect="customized" placement="top">
                                 <el-button class="btn-success" @click="openModal(scope.row)">
                                     <font-awesome-icon :icon="['fas', 'pen']" />
                                 </el-button>
                             </el-tooltip>
-                            <el-tooltip :content="scope.row.status ? 'Desactivar cliente' : 'Activar cliente'" effect="customized" placement="top">
+                            <el-tooltip :content="scope.row.status ? 'Desactivar producto' : 'Activar producto'" effect="customized" placement="top">
                                 <el-button
                                     :class="{'btn-warning': scope.row.status, 'btn-info': !scope.row.status}"
-                                    @click="statusCustomer(scope.row)"
+                                    @click="statusProduct(scope.row)"
                                 >
                                     <font-awesome-icon :icon="['fas', 'eye']" />
                                 </el-button>
@@ -197,13 +217,13 @@ const handleCurrentChange = (val) => {
                                 confirm-button-type="danger"
                                 cancel-button-type="primary"
                                 :width="200"
-                                title="¿Seguro que deseas eliminar este cliente?"
+                                title="¿Seguro que deseas eliminar este producto?"
                                 placement="left"
-                                @confirm="deleteCustomer(scope.row.id)"
+                                @confirm="deleteProduct(scope.row.id)"
                             >
                                 <template #reference>
                                     <span>
-                                        <el-tooltip content="Eliminar cliente" effect="customized" placement="top">
+                                        <el-tooltip content="Eliminar producto" effect="customized" placement="top">
                                             <el-button class="btn-danger" style="border-top-left-radius: 0px; border-bottom-left-radius: 0px;">
                                                 <font-awesome-icon :icon="['fas', 'trash-can']" />
                                             </el-button>
@@ -227,7 +247,7 @@ const handleCurrentChange = (val) => {
             />
         </el-col>
     </Layout>
-    <CreateEditCustomer ref="createEditCustomerRef" :get-parent-customers="getCustomers" />
+    <CreateEditProduct ref="createEditProductRef" :get-parent-products="getProducts" />
 </template>
 
 <style scoped>

@@ -70,7 +70,7 @@ const statusModule = async (module) => {
             <el-table-column align="center">
                 <template #header>
                     <el-tooltip content="Nuevo módulo" effect="customized" placement="top">
-                        <el-button class="btn-success ps-2 pe-2" @click="openModal()">
+                        <el-button class="btn-success" @click="openModal()">
                             <font-awesome-icon :icon="['fas', 'plus']" />
                         </el-button>
                     </el-tooltip>
@@ -78,14 +78,13 @@ const statusModule = async (module) => {
                 <template #default="scope">
                     <el-button-group>
                         <el-tooltip content="Editar módulo" effect="customized" placement="top">
-                            <el-button class="btn-success ps-2 pe-2" @click="openModal(scope.row)">
+                            <el-button class="btn-success" @click="openModal(scope.row)">
                                 <font-awesome-icon :icon="['fas', 'pen']" />
                             </el-button>
                         </el-tooltip>
                         <el-tooltip :content="scope.row.status ? 'Desactivar módulo' : 'Activar módulo'" effect="customized" placement="top">
                             <el-button
                                 :class="{'btn-danger': scope.row.status, 'btn-info': !scope.row.status}"
-                                class="ps-2 pe-2"
                                 @click="statusModule(scope.row)"
                             >
                                 <font-awesome-icon :icon="['fas', 'eye']" />

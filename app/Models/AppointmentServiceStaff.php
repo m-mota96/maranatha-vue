@@ -14,6 +14,7 @@ class AppointmentServiceStaff extends Model
         'appointment_id',
         'service_id',
         'staff_id',
+        'sale_id',
         'price',
         'discounted_price',
         'start_time',
@@ -22,6 +23,10 @@ class AppointmentServiceStaff extends Model
 
     public function appointment() {
         return $this->belongsTo(Appointment::class);
+    }
+
+    public function sale() {
+        return $this->belongsTo(Sale::class);
     }
 
     public function service() {

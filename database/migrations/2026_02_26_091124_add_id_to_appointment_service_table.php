@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('status_quotes', function (Blueprint $table) {
-            $table->id();
-            $table->string('status');
+        Schema::table('appointment_service', function (Blueprint $table) {
+            $table->id()->first();
         });
     }
 
@@ -22,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('status_quotes');
+        Schema::table('appointment_service', function (Blueprint $table) {
+            $table->dropColumn('id');
+        });
     }
 };

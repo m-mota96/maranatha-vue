@@ -138,7 +138,7 @@ const handleCurrentChange = (val) => {
                 <el-table-column width="150" align="center">
                     <template #header>
                         <el-tooltip content="Nuevo puesto" effect="customized" placement="top">
-                            <el-button class="btn-success ps-2 pe-2" @click="openModal()">
+                            <el-button class="btn-success" @click="openModal()">
                                 <font-awesome-icon :icon="['fas', 'plus']" />
                             </el-button>
                         </el-tooltip>
@@ -146,14 +146,13 @@ const handleCurrentChange = (val) => {
                     <template #default="scope">
                         <el-button-group>
                             <el-tooltip content="Editar puesto" effect="customized" placement="top">
-                                <el-button class="btn-success ps-2 pe-2" @click="openModal(scope.row)">
+                                <el-button class="btn-success" @click="openModal(scope.row)">
                                     <font-awesome-icon :icon="['fas', 'pen']" />
                                 </el-button>
                             </el-tooltip>
                             <el-tooltip :content="scope.row.status ? 'Desactivar puesto' : 'Activar puesto'" effect="customized" placement="top">
                                 <el-button
                                     :class="{'btn-warning': scope.row.status, 'btn-info': !scope.row.status}"
-                                    class="ps-2 pe-2"
                                     @click="statusPosition(scope.row)"
                                 >
                                     <font-awesome-icon :icon="['fas', 'eye']" />
@@ -174,7 +173,7 @@ const handleCurrentChange = (val) => {
                                 <template #reference>
                                     <span>
                                         <el-tooltip content="Eliminar puesto" effect="customized" placement="top">
-                                            <el-button class="btn-danger ps-2 pe-2" style="border-top-left-radius: 0px; border-bottom-left-radius: 0px;">
+                                            <el-button class="btn-danger" style="border-top-left-radius: 0px; border-bottom-left-radius: 0px;">
                                                 <font-awesome-icon :icon="['fas', 'trash-can']" />
                                             </el-button>
                                         </el-tooltip>

@@ -64,6 +64,15 @@ class StaffController extends Controller {
         }
     }
 
+    public function getAllStaff() {
+        try {
+            $staff = Staff::where('status', 1)->orderBy('first_name')->get();
+            return Response::response(null, $staff);
+        } catch (\Throwable $th) {
+            return Response::response($th->getMessage(), null, true, 500);
+        }
+    }
+
     public function saveStaff(Request $request) {
         try {
             $request->validate([
@@ -181,7 +190,7 @@ class StaffController extends Controller {
                 'service:id,name,color',
                 'staff:id,name,first_name,last_name'
             ])->whereHas('appointment', function($q) use($request) {
-                $q->where('date', $request->date);
+                $q->where('date', $request->date)->whereNotIn('appointment_status_id', [2, 3]);
             })->get();
             
             return Response::response(null, ['staff' => $staff, 'servicesForStaff' => $servicesForStaff]);

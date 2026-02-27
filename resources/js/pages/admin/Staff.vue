@@ -216,7 +216,7 @@ const handleCurrentChange = (val) => {
                 <el-table-column width="200" align="center">
                     <template #header>
                         <el-tooltip content="Nuevo staff" effect="customized" placement="top">
-                            <el-button class="btn-success ps-2 pe-2" @click="openModal()">
+                            <el-button class="btn-success" @click="openModal()">
                                 <font-awesome-icon :icon="['fas', 'plus']" />
                             </el-button>
                         </el-tooltip>
@@ -224,14 +224,13 @@ const handleCurrentChange = (val) => {
                     <template #default="scope">
                         <el-button-group>
                             <el-tooltip content="Editar staff" effect="customized" placement="top">
-                                <el-button class="btn-success ps-2 pe-2" @click="openModal(scope.row)">
+                                <el-button class="btn-success" @click="openModal(scope.row)">
                                     <font-awesome-icon :icon="['fas', 'pen']" />
                                 </el-button>
                             </el-tooltip>
                             <el-tooltip content="Editar horarios" effect="customized" placement="top">
                                 <el-button
                                     type="primary"
-                                    class="ps-2 pe-2"
                                     @click="openModalSchedule(scope.row.id, `${scope.row.name} ${scope.row.first_name} ${scope.row.last_name}`, scope.row.schedules)"
                                 >
                                     <font-awesome-icon :icon="['far', 'clock']" />
@@ -240,7 +239,6 @@ const handleCurrentChange = (val) => {
                             <el-tooltip :content="scope.row.status ? 'Desactivar staff' : 'Activar staff'" effect="customized" placement="top">
                                 <el-button
                                     :class="{'btn-warning': scope.row.status, 'btn-info': !scope.row.status}"
-                                    class="ps-2 pe-2"
                                     @click="statusStaff(scope.row)"
                                 >
                                     <font-awesome-icon :icon="['fas', 'eye']" />
@@ -261,7 +259,7 @@ const handleCurrentChange = (val) => {
                                 <template #reference>
                                     <span>
                                         <el-tooltip content="Eliminar staff" effect="customized" placement="top">
-                                            <el-button class="btn-danger ps-2 pe-2" style="border-top-left-radius: 0px; border-bottom-left-radius: 0px;">
+                                            <el-button class="btn-danger" style="border-top-left-radius: 0px; border-bottom-left-radius: 0px;">
                                                 <font-awesome-icon :icon="['fas', 'trash-can']" />
                                             </el-button>
                                         </el-tooltip>

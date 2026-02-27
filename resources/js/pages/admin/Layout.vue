@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import Menu from './Menu.vue';
 
+const appName                           = import.meta.env.VITE_APP_NAME;
 const { menu, dad, module, background } = defineProps({
     menu: {
         type: Array,
@@ -63,21 +64,21 @@ onMounted(() => {
                 </el-col>
             </el-row>
         </el-col>
-        <el-col :span="8" class="pt-2">
-            <b class="text-white fs-6">{{ currentYear }} © Temazcal Maranatha</b>
+        <el-col :span="8" class="pt-2 ps-2">
+            <span class="text-white fs-6">{{ currentYear }} © {{ appName }}</span>
         </el-col>
         <el-col :span="8" class="pt-2 justify-center items-center" style="display: flex;">
-            <img class="w-20" src="/general/icono3.png" alt="Temazcal Maranatha">
+            <img class="w-15" src="/general/icono3.png" :alt="appName">
         </el-col>
-        <el-col :span="8" class="pt-2">
-
+        <el-col :span="8" class="pt-2 pe-2 text-right">
+            <span class="text-white fs-6">Desarrollado por <b>DataSoft Software</b></span>
         </el-col>
     </el-row>
 </template>
 
 <style scoped>
     .content {
-        min-height: 78vh !important;
+        min-height: 77vh !important;
         background-color: #ebedf6 !important;
     }
 </style>

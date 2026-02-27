@@ -62,7 +62,7 @@ const statusUser = async (user) => {
             <el-table-column width="150" align="center">
                 <template #header>
                     <el-tooltip content="Nuevo usuario" effect="customized" placement="top">
-                        <el-button class="btn-success ps-2 pe-2" @click="openModal()">
+                        <el-button class="btn-success" @click="openModal()">
                             <font-awesome-icon :icon="['fas', 'plus']" />
                         </el-button>
                     </el-tooltip>
@@ -70,14 +70,13 @@ const statusUser = async (user) => {
                 <template #default="scope">
                     <el-button-group>
                         <el-tooltip content="Editar usuario" effect="customized" placement="top">
-                            <el-button class="btn-success ps-2 pe-2" @click="openModal(scope.row)">
+                            <el-button class="btn-success" @click="openModal(scope.row)">
                                 <font-awesome-icon :icon="['fas', 'pen']" />
                             </el-button>
                         </el-tooltip>
                         <el-tooltip :content="scope.row.active ? 'Desactivar usuario' : 'Activar usuario'" effect="customized" placement="top">
                             <el-button
                                 :class="{'btn-danger': scope.row.active, 'btn-info': !scope.row.active}"
-                                class="ps-2 pe-2"
                                 @click="statusUser(scope.row)"
                             >
                                 <font-awesome-icon :icon="['fas', 'eye']" />

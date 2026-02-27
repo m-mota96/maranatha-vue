@@ -28,14 +28,14 @@ const pagination           = ref({
     total: 0
 });
 const search = ref({
-    service_type_id: 0,
+    service_type_id: '',
     name: '',
     price: '',
     discounted_price: '',
-    status: 'all'
+    status: ''
 });
 const order = ref({
-    orderBy: 'id',
+    orderBy: 'created_at',
     order: 'DESC'
 });
 
@@ -78,12 +78,12 @@ const openModal = (data = null) => {
 };
 
 const resetFilters = () => {
-    search.value.service_type_id  = 0;
+    search.value.service_type_id  = '';
     search.value.name             = '';
     search.value.price            = '';
     search.value.discounted_price = '';
-    search.value.status           = 'all';
-    order.value.orderBy           = 'id';
+    search.value.status           = '';
+    order.value.orderBy           = 'created_at';
     order.value.order             = 'DESC';
     getServices();
 }
@@ -108,13 +108,12 @@ const handleCurrentChange = (val) => {
         <el-col class="mb-2" :span="4" :offset="15">
             <label for="order">Ordenar por</label>
             <el-select v-model="order.orderBy" @change="getServices" id="order">
-                <el-option :key="0" label="Id" value="id" />
+                <el-option :key="0" label="Fecha de creación" value="created_at" />
                 <el-option :key="1" label="Tipo de servicio" value="service_type_id" />
                 <el-option :key="2" label="Servicio" value="name" />
                 <el-option :key="3" label="Precio" value="price" />
                 <el-option :key="4" label="Precio especial" value="discounted_price" />
                 <el-option :key="5" label="Duración del servicio" value="time" />
-                <el-option :key="6" label="Estatus" value="status" />
             </el-select>
         </el-col>
         <el-col class="mb-2 ps-3" :span="4">
@@ -140,8 +139,7 @@ const handleCurrentChange = (val) => {
                 <el-table-column prop="id" label="#" width="70" align="center" />
                 <el-table-column prop="service_type.name">
                     <template #header>
-                        <el-select placeholder="Tipo de servicio" v-model="search.service_type_id" @change="getServices">
-                            <el-option :value="0" label="Tipo de servicio" />
+                        <el-select placeholder="Tipo de servicio" v-model="search.service_type_id" @change="getServices" clearable>
                             <el-option
                                 v-for="s in serviceType"
                                 :key="s.id"
@@ -185,8 +183,7 @@ const handleCurrentChange = (val) => {
                 </el-table-column>
                 <el-table-column align="center" width="150">
                     <template #header>
-                        <el-select placeholder="Estatus" v-model="search.status" @change="getServices">
-                            <el-option value="all" label="Estatus" />
+                        <el-select placeholder="Estatus" v-model="search.status" @change="getServices" clearable>
                             <el-option :value="1" label="Activo" />
                             <el-option :value="0" label="Inactivo" />
                         </el-select>
@@ -199,7 +196,7 @@ const handleCurrentChange = (val) => {
                 <el-table-column width="150" align="center">
                     <template #header>
                         <el-tooltip content="Nuevo servicio" effect="customized" placement="top">
-                            <el-button class="btn-success ps-2 pe-2" @click="openModal()">
+                            <el-button class="btn-success" @click="openModal()">
                                 <font-awesome-icon :icon="['fas', 'plus']" />
                             </el-button>
                         </el-tooltip>
@@ -207,14 +204,13 @@ const handleCurrentChange = (val) => {
                     <template #default="scope">
                         <el-button-group>
                             <el-tooltip content="Editar servicio" effect="customized" placement="top">
-                                <el-button class="btn-success ps-2 pe-2" @click="openModal(scope.row)">
+                                <el-button class="btn-success" @click="openModal(scope.row)">
                                     <font-awesome-icon :icon="['fas', 'pen']" />
                                 </el-button>
                             </el-tooltip>
                             <el-tooltip :content="scope.row.status ? 'Desactivar servicio' : 'Activar servicio'" effect="customized" placement="top">
                                 <el-button
                                     :class="{'btn-warning': scope.row.status, 'btn-info': !scope.row.status}"
-                                    class="ps-2 pe-2"
                                     @click="statusService(scope.row)"
                                 >
                                     <font-awesome-icon :icon="['fas', 'eye']" />
@@ -235,7 +231,7 @@ const handleCurrentChange = (val) => {
                                 <template #reference>
                                     <span>
                                         <el-tooltip content="Eliminar servicio" effect="customized" placement="top">
-                                            <el-button class="btn-danger ps-2 pe-2" style="border-top-left-radius: 0px; border-bottom-left-radius: 0px;">
+                                            <el-button class="btn-danger" style="border-top-left-radius: 0px; border-bottom-left-radius: 0px;">
                                                 <font-awesome-icon :icon="['fas', 'trash-can']" />
                                             </el-button>
                                         </el-tooltip>

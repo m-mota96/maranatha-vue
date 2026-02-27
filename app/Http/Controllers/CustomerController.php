@@ -26,25 +26,30 @@ class CustomerController extends Controller {
     public function getCustomers(Request $request) {
         try {
             $pagination = $request->pagination;
-            $page       = $pagination['currentPage']; // Página actual
             $limit      = $pagination['pageSize']; // Tamaño de la página
-            $offset     = ($page - 1) * $limit; // Calcular el offset
             $search     = $request->search;
             $order      = $request->order;
 
-            $query = Customer::whereNotNull('id');
-            
-            if ($search['name']) $query->whereRaw('name LIKE "%'.$search['name'].'%"');
-            
-            if ($search['email']) $query->whereRaw('email LIKE "%'.$search['email'].'%"');
+            $allowedColumns = ['created_at', 'name', 'email', 'phone', 'company_name', 'rfc'];
 
-            if ($search['phone']) $query->whereRaw('phone LIKE "%'.$search['phone'].'%"');
+            $orderBy = in_array($order['orderBy'] ?? '', $allowedColumns)
+                ? $order['orderBy']
+                : 'created_at';
 
-            if ($search['status'] !== 'all') $query->where('status', $search['status']);
+            $orderDir = strtolower($order['order'] ?? '') === 'asc' ? 'asc' : 'desc';
+
+            $query = Customer::query();
             
-            $customers = $query->offset($offset)->limit($limit)->orderBy($order['orderBy'], $order['order'])->get();
-            $totalRows = $query->count();
-            return Response::response(null, ['customers' => $customers, 'totalRows' => $totalRows]);
+            if (!empty($search['name'])) $query->whereLike('name', '%'.$search['name'].'%');
+            
+            if (!empty($search['email'])) $query->whereLike('email', '%'.$search['email'].'%');
+
+            if (!empty($search['phone'])) $query->whereLike('phone', '%'.$search['phone'].'%');
+
+            if (isset($search['status'])) $query->where('status', $search['status']);
+            
+            $customers = $query->orderBy($orderBy, $orderDir)->paginate($limit, ['*'], 'page', $pagination['currentPage']);
+            return Response::response(null, ['customers' => $customers->items(), 'totalRows' => $customers->total()]);
         } catch (\Throwable $th) {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
         }

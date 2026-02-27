@@ -17,7 +17,7 @@ class ModuleSeeder extends Seeder
             'module_id' => null,
             'name' => 'Configuración',
             'target' => null,
-            'icon' => 'fas, gear',
+            'icon' => 'fas, wrench',
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
         ];
@@ -62,6 +62,105 @@ class ModuleSeeder extends Seeder
             'module_id' => 4,
             'name' => 'Permisos de modulos',
             'target' => 'configuracion_permisos_modulos',
+            'icon' => null,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $modules[6] = [
+            'module_id' => null,
+            'name' => 'Organización',
+            'target' => null,
+            'icon' => 'fas, sitemap',
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $modules[7] = [
+            'module_id' => 7,
+            'name' => 'Staff',
+            'target' => null,
+            'icon' => null,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $modules[8] = [
+            'module_id' => 8,
+            'name' => 'Administrar Staff',
+            'target' => 'organizacion_staff_staff',
+            'icon' => null,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $modules[9] = [
+            'module_id' => 8,
+            'name' => 'Puestos',
+            'target' => 'organizacion_staff_puestos',
+            'icon' => null,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $modules[10] = [
+            'module_id' => null,
+            'name' => 'Operación',
+            'target' => null,
+            'icon' => 'fas, gears',
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $modules[11] = [
+            'module_id' => 11,
+            'name' => 'Servicios',
+            'target' => 'operacion_servicios',
+            'icon' => null,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $modules[12] = [
+            'module_id' => 11,
+            'name' => 'Productos',
+            'target' => null,
+            'icon' => null,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $modules[13] = [
+            'module_id' => 13,
+            'name' => 'Administrar Productos',
+            'target' => null,
+            'icon' => null,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $modules[14] = [
+            'module_id' => 13,
+            'name' => 'Inventario',
+            'target' => null,
+            'icon' => null,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $modules[15] = [
+            'module_id' => null,
+            'name' => 'Clientes',
+            'target' => null,
+            'icon' => 'fas, users',
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $modules[16] = [
+            'module_id' => 16,
+            'name' => 'Clientes',
+            'target' => 'clientes_clientes',
             'icon' => null,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),

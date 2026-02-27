@@ -26,6 +26,10 @@ class DatabaseSeeder extends Seeder
             ModuleUserSeeder::class,
             AuthorizationSeeder::class,
             AuthorizationUserSeeder::class,
+            AppointmentStatusSeeder::class,
+            ReferenceSeeder::class,
+            PaymentMethodSeeder::class,
+            StatusSaleSeeder::class
         ]);
     }
 }

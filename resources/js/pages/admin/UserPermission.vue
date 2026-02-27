@@ -53,7 +53,7 @@ const openModal = (userId, permissions) => {
                 <template #default="scope">
                     <el-button-group>
                         <el-tooltip content="Editar permisos" effect="customized" placement="top">
-                            <el-button class="btn-success ps-2 pe-2" @click="openModal(scope.row.id, scope.row.modules)">
+                            <el-button class="btn-success" @click="openModal(scope.row.id, scope.row.modules)">
                                 <font-awesome-icon :icon="['fas', 'pen']" />
                             </el-button>
                         </el-tooltip>

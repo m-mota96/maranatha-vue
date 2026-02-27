@@ -4,9 +4,12 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\ModulePermissionController;
 use App\Http\Controllers\PositionController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\SaleController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StaffScheduleController;
@@ -22,9 +25,10 @@ Route::prefix('administrador')->name('administrador.')->middleware(['auth', 'rol
     Route::get('organizacion_staff_staff', [StaffController::class, 'staff'])->name('organizacion_staff_staff');
     Route::get('organizacion_staff_puestos', [PositionController::class, 'positions'])->name('organizacion_staff_puestos');
     Route::get('operacion_servicios', [ServiceController::class, 'services'])->name('operacion_servicios');
-    Route::get('operacion_productos', [ProductController::class, 'products'])->name('operacion_productos');
     Route::get('operacion_paquetes', [PackageController::class, 'packages'])->name('operacion_paquetes');
     Route::get('clientes_clientes', [CustomerController::class, 'customers'])->name('clientes_clientes');
+    Route::get('operacion_productos_productos', [ProductController::class, 'products'])->name('operacion_productos_productos');
+    Route::get('operacion_productos_inventario', [InventoryController::class, 'inventories'])->name('operacion_productos_inventario');
 });
 
 Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function() {
@@ -40,10 +44,13 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function() {
     Route::put('user', [AdminUserController::class, 'editUser']);
     Route::post('permissionUser', [UserPermissionController::class, 'permissionUser']);
     Route::get('services', [ServiceController::class, 'getServices']);
+    Route::get('allServices', [ServiceController::class, 'getAllServices']);
+    Route::get('serviceTypes', [ServiceController::class, 'getServiceTypes']);
     Route::post('service', [ServiceController::class, 'saveService']);
     Route::put('service', [ServiceController::class, 'editService']);
     Route::delete('service/{id}', [ServiceController::class, 'deleteService']);
     Route::get('staff', [StaffController::class, 'getStaff']);
+    Route::get('allStaff', [StaffController::class, 'getAllStaff']);
     Route::get('searchStaff', [StaffController::class, 'searchStaff']);
     Route::post('staff', [StaffController::class, 'saveStaff']);
     Route::put('staff', [StaffController::class, 'editStaff']);
@@ -60,6 +67,17 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function() {
     Route::put('customer', [CustomerController::class, 'editCustomer']);
     Route::delete('customer/{id}', [CustomerController::class, 'deleteCustomer']);
     Route::post('appointment', [AppointmentController::class, 'saveAppointment']);
+    Route::put('statusAppointment', [AppointmentController::class, 'statusAppointment']);
     Route::get('appointments', [AppointmentController::class, 'getAppointments']);
     Route::get('appointment/{id}', [AppointmentController::class, 'getAppointment']);
+    Route::delete('appointment/{id}', [AppointmentController::class, 'deleteAppointment']);
+    Route::get('products', [ProductController::class, 'getProducts']);
+    Route::get('product', [ProductController::class, 'searchProduct']);
+    Route::post('product', [ProductController::class, 'saveProduct']);
+    Route::put('product', [ProductController::class, 'editProduct']);
+    Route::delete('product/{id}', [ProductController::class, 'deleteProduct']);
+    Route::get('inventories', [InventoryController::class, 'getInventory']);
+    Route::post('inventory', [InventoryController::class, 'saveInventory']);
+    Route::delete('inventory/{id}', [InventoryController::class, 'deleteInventory']);
+    Route::post('sale', [SaleController::class, 'saveSale']);
 });

@@ -28,26 +28,61 @@ class ServiceController extends Controller {
     public function getServices(Request $request) {
         try {
             $pagination = $request->pagination;
-            $page       = $pagination['currentPage']; // Página actual
             $limit      = $pagination['pageSize']; // Tamaño de la página
-            $offset     = ($page - 1) * $limit; // Calcular el offset
             $search     = $request->search;
             $order      = $request->order;
 
+            $allowedColumns = ['created_at', 'service_type_id', 'name', 'price', 'discounted_price', 'time'];
+
+            $orderBy = in_array($order['orderBy'] ?? '', $allowedColumns)
+                ? $order['orderBy']
+                : 'created_at';
+
+            $orderDir = strtolower($order['order'] ?? '') === 'asc' ? 'asc' : 'desc';
+
             $query = Service::with(['service_type']);
-            if ($search['service_type_id']) $query->where('service_type_id', $search['service_type_id']);
 
-            if ($search['name']) $query->whereRaw('name LIKE "%'.$search['name'].'%"');
+            if (!empty($search['service_type_id'])) $query->where('service_type_id', $search['service_type_id']);
 
-            if ($search['price']) $query->whereRaw('price LIKE "%'.$search['price'].'%"');
+            if (!empty($search['name'])) $query->whereLike('name', '%'.$search['name'].'%');
+
+            if (!empty($search['price'])) $query->whereLike('price', '%'.$search['price'].'%');
             
-            if ($search['discounted_price']) $query->whereRaw('discounted_price LIKE "%'.$search['discounted_price'].'%"');
+            if (!empty($search['discounted_price'])) $query->whereLike('discounted_price', '%'.$search['discounted_price'].'%');
             
-            if ($search['status'] !== 'all') $query->where('status', $search['status']);
+            if (isset($search['status'])) $query->where('status', $search['status']);
             
-            $services  = $query->offset($offset)->limit($limit)->orderBy($order['orderBy'], $order['order'])->get();
-            $totalRows = $query->count();
-            return Response::response(null, ['services' => $services, 'totalRows' => $totalRows]);
+            $services  = $query->orderBy($orderBy, $orderDir)->paginate($limit, ['*'], 'page', $pagination['currentPage']);
+            return Response::response(null, ['services' => $services->items(), 'totalRows' => $services->total()]);
+        } catch (\Throwable $th) {
+            return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
+        }
+    }
+
+    public function getAllServices() {
+        try {
+            $services = Service::where('status', 1)->orderBy('name')->get();
+            return Response::response(null, $services);
+        } catch (\Throwable $th) {
+            return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
+        }
+    }
+
+    public function getServiceTypes() {
+        try {
+            $serviceTypes = ServiceType::with(['services:id,service_type_id,name,price,discounted_price,time,require_staff,color'])
+            ->where('status', 1)
+            ->orderBy('name')
+            ->get()
+            ->map(function ($serviceType) {
+                $serviceType->services = $serviceType->services->map(function ($service) {
+                    $service->active   = false;
+                    $service->quantity = 1;
+                    return $service;
+                });
+                return $serviceType;
+            });
+            return Response::response(null, $serviceTypes);
         } catch (\Throwable $th) {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
         }

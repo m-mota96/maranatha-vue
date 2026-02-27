@@ -6,9 +6,14 @@ import { ref, defineExpose, onMounted } from 'vue';
 import CreateEditCustomer from './CreateEditCustomer.vue';
 import { Timeline } from 'vue-timeline-chart';
 import 'vue-timeline-chart/style.css';
+import { format as formatDates } from 'date-fns';
 // import 'vue-timeline-chart/dist/vue-timeline-chart.css';
 
-const { serviceType } = defineProps({
+const { getParentAppointments, serviceType } = defineProps({
+    getParentAppointments: {
+        type: Function,
+        required: true
+    },
     serviceType: {
         type: Array,
         required: true
@@ -30,7 +35,8 @@ const form                  = ref({
     dateFormatted: '',
     horary: '',
     service_type: [],
-    services: []
+    services: [],
+    total: 0
 });
 const groups               = ref([]);
 const items                = ref([]);
@@ -41,6 +47,8 @@ const errors               = ref({
     customer: false,
     horary: false,
     horary_invalid: false,
+    staff_id: [],
+    horary_services: [],
 });
 
 onMounted(() => {
@@ -54,6 +62,7 @@ const saveAppointment = async () => {
             customer_id: form.value.customer_id,
             date: form.value.dateFormatted,
             horary: to24HourFormat(form.value.horary),
+            total: form.value.total,
             services: services.value
         });
         if (response.error) {
@@ -62,6 +71,7 @@ const saveAppointment = async () => {
         }
         dialogVisible.value = false;
         showNotification(response.msj);
+        getParentAppointments();
     }
 };
 
@@ -86,8 +96,63 @@ const validate = () => {
             }
         }
     }
+
+    if (!services.value.length) {
+        showNotification('No agregaste ningún servicio.', '¡Error!', 'error', 7500);
+        valid = false;
+    }
+
+    services.value.forEach(s => {
+        const require_staff = s.require_staff && !s.staff_id ? true : false;
+        errors.value.staff_id.push(require_staff);
+    });
+
+    // const hasConflict = hasCrossBetweenStaffAndNonStaff(services.value);
+    
+    // if (!hasConflict) {
+    //     valid = false;
+    // }
+
+    // console.log(errors.value.horary_services);
+
     return valid;
 };
+
+const hasCrossBetweenStaffAndNonStaff = (services) => {
+    // Convertir "HH:MM" a minutos
+    const toMinutes = (time) => {
+        const [hours, minutes] = time.split(":").map(Number);
+        return hours * 60 + minutes;
+    };
+
+    // Separa los servicios que requiren staff de los que no lo requieren
+    const withStaff    = services.filter(s => Number(s.require_staff) === 1);
+    const withoutStaff = services.filter(s => Number(s.require_staff) === 0);
+
+    let valid = true;
+    let pos   = 0;
+
+    // Compara cada uno con staff contra cada uno sin staff
+    for (let staffService of withStaff) {
+        const staffStart = toMinutes(staffService.start_time);
+        const staffEnd   = toMinutes(staffService.end_time);
+
+        for (let nonStaffService of withoutStaff) {
+            const nonStaffStart = toMinutes(nonStaffService.start_time);
+            const nonStaffEnd   = toMinutes(nonStaffService.end_time);
+
+            // Valida si se cruzan los horarios
+            if (staffStart < nonStaffEnd && staffEnd > nonStaffStart) {
+                // Si se cruzan
+                errors.value.horary_services[errors.value.horary_services.length] = true;
+                errors.value.horary_services[errors.value.horary_services.length] = true;
+                valid = false;
+            }
+        }
+    }
+
+    return valid; // No se cruzan
+}
 
 const showModal = () => {
     resetForm();
@@ -110,7 +175,10 @@ const searchStaff = async (resetHorary = false) => {
     }
     const currentDate = form.value.date;
     currentDate.setHours(0, 0, 0, 0);
-    if (resetHorary) form.value.horary = formatDate(currentDate) === formatDate(today) ? roundToStep(new Date(), 15) : '11:00 AM';
+    if (resetHorary) form.value.horary = formatDate(currentDate) === formatDate(today) ? roundToStep(new Date(), 5) : '11:00 AM';
+    if (services.value.length) {
+        verifyMinHorary();
+    }
     errors.value.horary         = false;
     errors.value.horary_invalid = false;
     if (form.value.date && form.value.horary) {
@@ -160,9 +228,10 @@ const resetForm = () => {
     form.value.customer      = '';
     form.value.date          = new Date();
     form.value.dateFormatted = '';
-    form.value.horary        = roundToStep(new Date(), 15);
+    form.value.horary        = roundToStep(new Date(), 5);
     form.value.service_type  = [];
     form.value.services      = [];
+    form.value.total         = 0;
     quantityServices.value   = 1;
     services.value           = [];
     items.value              = [];
@@ -171,9 +240,11 @@ const resetForm = () => {
 };
 
 const resetErrors = () => {
-    errors.value.customer       = false;
-    errors.value.horary         = false;
-    errors.value.horary_invalid = false;
+    errors.value.customer        = false;
+    errors.value.horary          = false;
+    errors.value.horary_invalid  = false;
+    errors.value.staff_id        = [];
+    errors.value.horary_services = [];
 };
 
 const getAvailableServiceTypes = (currentIndex) => {
@@ -206,6 +277,14 @@ const previewServices = (quantity, info, checked = true) => {
     if (checked) {
         switch (quantity) {
             case 1:
+                if (services.value.length > 0) {
+                    // Al agregar un servicio verificamos si es distinto del último agregado para que el horario inicie cuando termine el anterior servicio
+                    if (services.value[services.value.length - 1].id !== info.id) {
+                        initialHorary = services.value[services.value.length - 1].final_time;
+                    } else {
+                        initialHorary = services.value[services.value.length - 1].initial_time;
+                    }
+                }
                 services.value.push({
                     uid: generateUID(),
                     id: info.id,
@@ -218,7 +297,8 @@ const previewServices = (quantity, info, checked = true) => {
                     end_time: initialHorary ? to24HourFormat(addMinutesToTime(initialHorary, info.time)) : null,
                     color: info.color,
                     price: info.price,
-                    discounted_price: info.discounted_price
+                    discounted_price: info.discounted_price,
+                    require_staff: info.require_staff
                 });
                 break;
             case -1:
@@ -233,6 +313,14 @@ const previewServices = (quantity, info, checked = true) => {
         services.value = services.value.filter(s => s.id !== info.id);
     }
     setItemTimeLine();
+    calculateTotal();
+};
+
+const calculateTotal = () => {
+    form.value.total = 0;
+    services.value.forEach(s => {
+        form.value.total = form.value.total + parseInt(s.price);
+    });
 };
 
 const filterStaffByService = (service_id) => {
@@ -270,6 +358,7 @@ const editHorary = (horary, currentIndex) => {
     services.value[currentIndex].final_time   = addMinutesToTime(horary, services.value[currentIndex].time);
     services.value[currentIndex].start_time   = to24HourFormat(horary);
     services.value[currentIndex].end_time     = to24HourFormat(addMinutesToTime(horary, services.value[currentIndex].time));
+    verifyMinHorary();
 };
 
 const setItemTimeLine = () => {
@@ -287,6 +376,19 @@ const setItemTimeLine = () => {
             });
         }
     });
+};
+
+const verifyMinHorary = () => {
+    // Buscamos el horario mas chico de todos los servicios añadidos y le asignamos ese valor a la hora de la cita
+    let minHorary = null;
+    let key       = null;
+    services.value.forEach((s, i) => {
+        if (!minHorary || s.start_time < minHorary) {
+            minHorary = s.start_time;
+            key       = i;
+        }
+    });
+    form.value.horary = services.value[key].initial_time;
 };
 
 const resetViewport = () => {
@@ -376,6 +478,26 @@ const generateUID = () => {
   return Math.random().toString(36).substr(2, 9);
 };
 
+const selectDate = (move) => {
+    if (move === 'prev-month') {
+        form.value.date = new Date(form.value.date.setMonth(form.value.date.getMonth() - 1));
+    } else if (move === 'next-month') {
+        form.value.date = new Date(form.value.date.setMonth(form.value.date.getMonth() + 1));
+    } else {
+        form.value.date = new Date();
+    }
+}
+
+// Verifica si el mes que se está visualizando es el mes actual (o anterior) para bloquear
+const isCurrentMonth = (dateString) => {
+    const displayedDate = new Date(dateString);
+    const today         = new Date();
+    return (
+        displayedDate.getFullYear() <= today.getFullYear() &&
+        displayedDate.getMonth() <= today.getMonth()
+    )
+}
+
 defineExpose({
     showModal
 });
@@ -416,18 +538,52 @@ defineExpose({
             </el-col>
             <el-col :span="24">
                 <p class="bold text-black mb-0">Fecha de cita</p>
-                <el-calendar class="w-100" v-model="form.date" @update:modelValue="searchStaff(true)" />
+                <!-- <el-calendar class="w-100" v-model="form.date" @update:modelValue="searchStaff(true)" /> -->
+                 <el-calendar class="w-100" v-model="form.date" @update:modelValue="searchStaff(true)">
+                    <template #header="{ date }">
+                        <span>{{ date }}</span>
+                        <el-button-group>
+                            <!-- Botón Mes Anterior: Se deshabilita si el mes mostrado es el actual -->
+                            <el-button 
+                            size="small" 
+                            @click="selectDate('prev-month')"
+                            :disabled="isCurrentMonth(date)"
+                            >
+                            Mes Anterior
+                            </el-button>
+                            
+                            <el-button size="small" @click="selectDate('today')">Hoy</el-button>
+                            
+                            <el-button size="small" @click="selectDate('next-month')">
+                            Mes Siguiente
+                            </el-button>
+                        </el-button-group>
+                    </template>
+                </el-calendar>
             </el-col>
         </el-col>
         <el-col :span="6">
             <el-col :span="24" class="mb-3">
                 <p class="bold text-black mb-0">Hora de cita</p>
                 <el-time-select
+                    v-if="formatDates(form.date, 'yyyy-MM-dd') > formatDates(new Date, 'yyyy-MM-dd')"
                     class="el-form-item"
                     :class="{'is-error': errors.horary || errors.horary_invalid}"
                     v-model="form.horary"
                     start="11:00"
-                    step="00:15"
+                    step="00:05"
+                    end="20:00"
+                    placeholder="Selecciona la hora"
+                    format="hh:mm A"
+                    @change="searchStaff()"
+                />
+                <el-time-select
+                    v-if="formatDates(form.date, 'yyyy-MM-dd') <= formatDates(new Date, 'yyyy-MM-dd')"
+                    class="el-form-item"
+                    :class="{'is-error': errors.horary || errors.horary_invalid}"
+                    v-model="form.horary"
+                    :start="roundToStep(new Date(), 5)"
+                    step="00:05"
                     end="20:00"
                     placeholder="Selecciona la hora"
                     format="hh:mm A"
@@ -498,11 +654,23 @@ defineExpose({
                         <td class="text-center" width="150">
                             <span v-if="!form.horary">--:--</span>
                             <el-time-select
-                                v-if="form.horary"
+                                v-if="form.horary && (formatDates(form.date, 'yyyy-MM-dd') > formatDates(new Date, 'yyyy-MM-dd'))"
                                 v-model="s.initial_time"
-                                start="00:00"
-                                step="00:10"
-                                end="23:59"
+                                class="el-form-item"
+                                start="11:00"
+                                step="00:5"
+                                end="20:00"
+                                placeholder="Selecciona la hora"
+                                format="hh:mm A"
+                                @change="(val) => editHorary(val, i)"
+                            />
+                            <el-time-select
+                                v-if="form.horary && (formatDates(form.date, 'yyyy-MM-dd') <= formatDates(new Date, 'yyyy-MM-dd'))"
+                                v-model="s.initial_time"
+                                class="el-form-item"
+                                :start="roundToStep(new Date(), 5)"
+                                step="00:5"
+                                end="20:00"
                                 placeholder="Selecciona la hora"
                                 format="hh:mm A"
                                 @change="(val) => editHorary(val, i)"
@@ -513,7 +681,10 @@ defineExpose({
                         </td>
                         <td>
                             <el-select
+                                v-if="s.require_staff"
                                 v-model="s.staff_id"
+                                class="el-form-item"
+                                :class="{'is-error': errors.staff_id[i]}"
                                 clearable
                                 :disabled="!s.start_time || !s.end_time"
                                 placeholder="Selecciona al staff"
@@ -527,6 +698,8 @@ defineExpose({
                                     :disabled="isStaffBusy(st.id, s.start_time, s.end_time)"
                                 />
                             </el-select>
+                            <span v-if="!s.require_staff" class="text-dark">N/A</span>
+                            <span class="text-danger fs-small" v-if="errors.staff_id[i]">Debes elegir a alguien del staff.</span>
                         </td>
                     </tr>
                 </tbody>
