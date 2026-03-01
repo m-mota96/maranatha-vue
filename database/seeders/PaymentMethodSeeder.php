@@ -16,24 +16,31 @@ class PaymentMethodSeeder extends Seeder
         $data[0] = [
             'name'       => 'Efectivo',
             'default'    => true,
+            'status'     => 1,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s')
         ];
 
         $data[1] = [
             'name'       => 'Efectivo y Tarjeta',
+            'default'    => false,
+            'status'     => 1,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s')
         ];
 
         $data[2] = [
             'name'       => 'Tarjeta',
+            'default'    => false,
+            'status'     => 1,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s')
         ];
 
         $data[3] = [
             'name'       => 'Transferencia',
+            'default'    => false,
+            'status'     => 1,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s')
         ];

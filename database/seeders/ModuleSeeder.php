@@ -133,7 +133,7 @@ class ModuleSeeder extends Seeder
         $modules[13] = [
             'module_id' => 13,
             'name' => 'Administrar Productos',
-            'target' => null,
+            'target' => 'operacion_productos_productos',
             'icon' => null,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
@@ -142,7 +142,7 @@ class ModuleSeeder extends Seeder
         $modules[14] = [
             'module_id' => 13,
             'name' => 'Inventario',
-            'target' => null,
+            'target' => 'operacion_productos_inventario',
             'icon' => null,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
