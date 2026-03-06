@@ -268,7 +268,7 @@ defineExpose({
             <el-col :span="24" class="mb-3">
                 <label class="bold mb-2">Servicios que realiza</label><br>
                 <div>
-                    <el-checkbox v-for="(s, i) in services" :key="i" v-model="servicesStaff[i].val" :label="s.name" size="large" />
+                    <el-checkbox v-for="(s, i) in services" :key="i" v-model="servicesStaff[i].val" :label="`${s.name} (${s.time} min.)`" size="large" />
                 </div>
             </el-col>
         </el-row>

@@ -13,6 +13,7 @@ use App\Http\Controllers\SaleController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StaffScheduleController;
+use App\Http\Controllers\StatisticController;
 use App\Http\Controllers\UserPermissionController;
 use Illuminate\Support\Facades\Route;
 
@@ -29,6 +30,8 @@ Route::prefix('administrador')->name('administrador.')->middleware(['auth', 'rol
     Route::get('clientes_clientes', [CustomerController::class, 'customers'])->name('clientes_clientes');
     Route::get('operacion_productos_productos', [ProductController::class, 'products'])->name('operacion_productos_productos');
     Route::get('operacion_productos_inventario', [InventoryController::class, 'inventories'])->name('operacion_productos_inventario');
+    Route::get('contabilidad_ventas', [SaleController::class, 'sales'])->name('contabilidad_ventas');
+    Route::get('contabilidad_estadisticas', [StatisticController::class, 'statistics'])->name('contabilidad_estadisticas');
 });
 
 Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function() {
@@ -79,5 +82,13 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function() {
     Route::get('inventories', [InventoryController::class, 'getInventory']);
     Route::post('inventory', [InventoryController::class, 'saveInventory']);
     Route::delete('inventory/{id}', [InventoryController::class, 'deleteInventory']);
+    Route::get('sales', [SaleController::class, 'getSales']);
+    Route::get('sale', [SaleController::class, 'getSale']);
     Route::post('sale', [SaleController::class, 'saveSale']);
+    Route::put('sale', [SaleController::class, 'editSale']);
+    Route::get('mostPopularServices', [StatisticController::class, 'mostPopularServices']);
+    Route::get('statistics/salesIncome', [StatisticController::class, 'salesIncome']);
+    Route::get('statistics/expenses', [StatisticController::class, 'expenses']);
+    Route::get('statistics/appointments', [StatisticController::class, 'appointments']);
+    Route::get('statistics/users', [StatisticController::class, 'usersActiveInactice']);
 });

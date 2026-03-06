@@ -1,5 +1,5 @@
 <script lang="js" setup>
-import { ref, onMounted, onBeforeMount, nextTick } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import Layout from './Layout.vue';
 import CreateEditCustomer from './modals/CreateEditCustomer.vue';
 import CreateAppointment from './modals/CreateAppointment.vue';
@@ -8,6 +8,8 @@ import apiClient from '@/apiClient';
 import { showNotification } from '@/notification';
 import Swal from 'sweetalert2';
 import { dateEs } from '@/dateEs';
+import { format as formatDates } from 'date-fns';
+import { Chart as highcharts } from 'highcharts-vue';
 
 const { menu, status, paymentMethods } = defineProps({
     menu: {
@@ -30,6 +32,7 @@ const createSaleRef         = ref(null);
 const serviceType           = ref([]);
 const appointments          = ref([]);
 const pendingId             = ref(null);
+const range                 = ref(2);
 const search                = ref({
     currentDate: '',
     customer: '',
@@ -39,24 +42,95 @@ const search                = ref({
 });
 const pagination            = ref({
     currentPage: 1,
-    pageSize: 20,
+    pageSize: 50,
     total: 0
 });
 const order = ref({
     orderBy: 'created_at',
     order: 'DESC'
 });
-const scheduled = ref(0);
-const confirmed = ref(0);
-const canceled  = ref(0);
+const scheduled  = ref(0);
+const confirmed  = ref(0);
+const finished   = ref(0);
+const canceled   = ref(0);
+const statistics = ref({
+    mostPopularServices: [],
+    salesIncome: {
+        day: 0,
+        month: 0,
+        year: 0
+    },
+    expenses: {
+        day: 0,
+        month: 0,
+        year: 0
+    },
+    users: {
+        actives: 0,
+        inactives: 0
+    },
+});
 
-onBeforeMount(() => {
-    getServices();
+const chart = ref({
+    chart: {
+        type: 'area',
+        margin: [0, 0, 0, 0],
+        spacing: [0, 0, 0, 0]
+    },
+    title: {
+        text: 'Citas del mes',
+        style: {
+            color: '#6c757d',
+            fontWeight: '500'
+        }
+    },
+    subtitle: { text: null },   // Oculta el subtítulo
+    credits: { enabled: false }, // Quita el logo de Highcharts.com
+    legend: { enabled: false },  // Quita la leyenda
+    exporting: { enabled: false }, // Quita el menú de hamburguesa (si usas el módulo)
+    
+    xAxis: {
+        type: 'datetime',
+        visible: false, // Oculta eje X, etiquetas y líneas de división
+    },
+    yAxis: {
+        visible: false, // Oculta eje Y, etiquetas y líneas de división
+        min: 0
+    },
+    tooltip: {
+        pointFormat: '{series.name} {point.y}',
+        xDateFormat: '%d/%m/%Y',
+        shared: true
+    },
+    plotOptions: {
+        area: {
+            marker: {
+                enabled: false,
+                symbol: 'circle',
+                radius: 2,
+                states: {
+                    hover: {
+                        enabled: true
+                    }
+                }
+            }
+        }
+    },
+    series: [
+        {
+            name: 'Citas',
+            data: [],
+        }
+    ],
+    accessibility: {
+        enabled: false
+    },
 });
 
 onMounted(() => {
     search.value.currentDate = formatDate(new Date());
     getAppointments();
+    getServices();
 });
 
 const getServices = async () => {
@@ -69,6 +143,11 @@ const getServices = async () => {
 };
 
 const getAppointments = async () => {
+    getMostPopularServices();
+    getSalesIncome();
+    getExpenses();
+    getAppointmentsPerMonth();
+    getUsersActiveInactive();
     if (!search.value.currentDate) {
         search.value.currentDate = formatDate(new Date());
     }
@@ -81,7 +160,80 @@ const getAppointments = async () => {
     pagination.value.total = response.data.totalRows;
     scheduled.value        = response.data.scheduled;
     confirmed.value        = response.data.confirmed;
+    finished.value         = response.data.finished;
     canceled.value         = response.data.canceled;
+};
+
+const getMostPopularServices = async () => {
+    const response = await apiClient('admin/mostPopularServices', 'GET', {
+        year: new Date().getFullYear(),
+        month: new Date().getMonth() + 1,
+        day: new Date().getDate(),
+        limit: 4
+    });
+    if (response.error) {
+        showNotification(response.msj, '¡Error!', 'error');
+        return
+    }
+    statistics.value.mostPopularServices = response.data;
+};
+
+const getSalesIncome = async () => {
+    const response = await apiClient('admin/statistics/salesIncome', 'GET', {
+        year: new Date().getFullYear(),
+        month: new Date().getMonth() + 1,
+        date: formatDates(new Date(), 'yyyy-MM-dd')
+    });
+    if (response.error) {
+        showNotification(response.msj, '¡Error!', 'error');
+        return
+    }
+    statistics.value.salesIncome.day   = response.data.salesForDay;
+    statistics.value.salesIncome.month = response.data.salesForMonth;
+    statistics.value.salesIncome.year  = response.data.salesForYear;
+};
+
+const getExpenses = async () => {
+    const response = await apiClient('admin/statistics/expenses', 'GET', {
+        year: new Date().getFullYear(),
+        month: new Date().getMonth() + 1,
+        date: formatDates(new Date(), 'yyyy-MM-dd')
+    });
+    if (response.error) {
+        showNotification(response.msj, '¡Error!', 'error');
+        return
+    }
+    statistics.value.expenses.day   = response.data.expensesForDay;
+    statistics.value.expenses.month = response.data.expensesForMonth;
+    statistics.value.expenses.year  = response.data.expensesForYear;
+};
+
+const getAppointmentsPerMonth = async () => {
+    const response = await apiClient('admin/statistics/appointments', 'GET', {
+        year: new Date().getFullYear(),
+        month: new Date().getMonth() + 1
+    });
+    if (response.error) {
+        showNotification(response.msj, '¡Error!', 'error');
+        return
+    }
+    const dataReady = Object.entries(response.data.perMonth).map(([fecha, valor]) => {
+        return [new Date(fecha).getTime(), valor];
+    });
+    chart.value.series[0] = {
+        ...chart.value.series[0],
+        data: dataReady
+    };
+    chart.value.title.text = response.data.total + ' Citas del mes';
+};
+const getUsersActiveInactive = async () => {
+    const response = await apiClient('admin/statistics/users', 'GET', { months: range.value });
+    if (response.error) {
+        showNotification(response.msj, '¡Error!', 'error');
+        return
+    }
+    statistics.value.users.actives   = response.data.actives;
+    statistics.value.users.inactives = response.data.inactives;
 };
 
 const handleConfirm = (id) => {
@@ -171,7 +323,7 @@ const setClass = (_status) => {
         case 'Confirmada':
             return 'text-primary'
         case 'Agendada':
-            return 'text-warning';
+            return '!text-orange-500';
         case 'Finalizada':
             return 'text-success';
     }
@@ -241,6 +393,113 @@ const resetFilters = () => {
     <Layout :menu="menu" :background="false">
         <el-col :span="24">
             <el-row :gutter="20">
+                <el-col :lg="6" class="mb-4">
+                    <el-card class="wave wave-animate-slow wave-success" style="height: 20vh;">
+                        <el-row :gutter="30" style="z-index: 999; height: 100%;">
+                            <el-col :span="12">
+                                <h5 class="text-secondary mb-3 text-center">Clientes</h5>
+                            </el-col>
+                            <el-col :span="12">
+                                <el-select v-model="range" size="small" class="my-select" @change="getUsersActiveInactive">
+                                    <el-option :value="2" label="Últimos 60 días" />
+                                    <el-option :value="3" label="Últimos 90 días" />
+                                    <el-option :value="6" label="Últimos 6 meses" />
+                                    <el-option :value="12" label="Últimos 12 meses" />
+                                </el-select>
+                            </el-col>
+                            <el-col :span="12" class="text-center mt-2">
+                                <h6 class="!text-green-500 mb-4">Activos</h6>
+                                <font-awesome-icon :icon="['fas', 'users']" class="text-2xl mr-2 !text-green-500"/>
+                                <span class="text-2xl bold !text-gray-600">{{ statistics.users.actives }}</span>
+                            </el-col>
+                            <el-col :span="12" class="text-center mt-2">
+                                <h6 class="!text-red-500 mb-4">Inactivos</h6>
+                                <font-awesome-icon :icon="['fas', 'users']" class="text-2xl mr-2 !text-red-500"/>
+                                <span class="text-2xl bold !text-gray-600">{{ statistics.users.inactives }}</span>
+                            </el-col>
+                        </el-row>
+                    </el-card>
+                </el-col>
+                <el-col :lg="6" class="mb-4">
+                    <el-card class="wave wave-animate-slow wave-info p-0" style="height: 20vh;">
+                        <table class="w-100 pr text-sm" style="z-index: 999; height: 100%;">
+                            <thead>
+                                <tr>
+                                    <th class="text-center pt-0 pb-2"></th>
+                                    <th class="text-center pt-0 pb-2 text-green-500 bold text-base"><font-awesome-icon :icon="['fas', 'arrow-up']" /> Ingresos</th>
+                                    <th class="text-center pt-0 pb-2 text-orange-500 bold text-base"><font-awesome-icon :icon="['fas', 'arrow-down']" /> Egresos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="text-center pt-2 pb-2 text-secondary bold">
+                                        Hoy
+                                    </td>
+                                    <td class="text-center pt-2 pb-2 text-secondary bold">
+                                        {{ formatCurrency(statistics.salesIncome.day) }}
+                                    </td>
+                                    <td class="text-center pt-2 pb-2 text-secondary bold">
+                                        {{ formatCurrency(statistics.expenses.day) }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center pt-2 pb-2 text-secondary bold">
+                                        Mes
+                                    </td>
+                                    <td class="text-center pt-2 pb-2 text-secondary bold">
+                                        {{ formatCurrency(statistics.salesIncome.month) }}
+                                    </td>
+                                    <td class="text-center pt-2 pb-2 text-secondary bold">
+                                        {{ formatCurrency(statistics.expenses.month) }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center pt-2 pb-2 text-secondary bold">
+                                        Año
+                                    </td>
+                                    <td class="text-center pt-2 pb-2 text-secondary bold">
+                                        {{ formatCurrency(statistics.salesIncome.year) }}
+                                    </td>
+                                    <td class="text-center pt-2 pb-2 text-secondary bold">
+                                        {{ formatCurrency(statistics.expenses.year) }}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </el-card>
+                </el-col>
+                <el-col :lg="6" class="mb-4">
+                    <el-card class="bg-image p-0" style="height: 20vh;">
+                        <el-row :gutter="20">
+                            <el-col :span="24" class="">
+                                <h5 class="text-secondary mb-3">Servicios por día</h5>
+                            </el-col>
+                            <el-col
+                                :span="12" v-for="s in statistics.mostPopularServices"
+                                class="pr mb-3"
+                                :title="`${s.service.name} (${s.service.time} min.)`"
+                            >
+                                <div
+                                    class="rounded pt-1 pb-1 ps-2 pe-2"
+                                    :style="{'background-color': s.service.color}"
+                                >
+                                    <span class="text-white bold">
+                                        {{ s.service.name.length < 17 ? s.service.name : s.service.name.substring(0, 16)+'...' }}
+                                    </span>
+                                    <span class="text-white bold pa" style="right: 20px;">{{ s.total }}</span>
+                                </div>
+                            </el-col>
+                        </el-row>
+                    </el-card>
+                </el-col>
+                <el-col :lg="6" class="mb-4">
+                    <el-card class="card-chart" style="height: 20vh;" body-style="height: 100%; box-sizing: border-box;">
+                        <highcharts
+                            :options="chart"
+                            class="chart-full-height"
+                        />
+                    </el-card>
+                </el-col>
                 <el-col :span="18">
                     <el-card class="pt-0 pb-6">
                         <el-row>
@@ -249,6 +508,7 @@ const resetFilters = () => {
                                 <p class="text-secondary fs-small mb-0">
                                     <span>Agendadas: <span class="card-warning pt-1 pb-1 ps-3 pe-3 bold">{{ scheduled }}</span></span>
                                     <span class="ms-2">Confirmadas: <span class="card-info pt-1 pb-1 ps-3 pe-3 bold">{{ confirmed }}</span></span>
+                                    <span class="ms-2">Finalizadas: <span class="card-success pt-1 pb-1 ps-3 pe-3 bold">{{ finished }}</span></span>
                                     <span class="ms-2">Canceladas: <span class="card-danger pt-1 pb-1 ps-3 pe-3 bold">{{ canceled }}</span></span>
                                 </p>
                             </el-col>
@@ -277,11 +537,12 @@ const resetFilters = () => {
                                     <thead>
                                         <tr>
                                             <th width="5%" class="text-center">#</th>
+                                            <th class="text-center">Fecha</th>
+                                            <th class="text-center">Hora</th>
                                             <th width="20%">
                                                 <el-input v-model="search.customer" placeholder="Cliente" title="Escribe para buscar" @input="getAppointments" clearable />
                                             </th>
-                                            <th class="text-center">Hora de inicio</th>
-                                            <th class="text-center">Total a pagar</th>
+                                            <th class="text-center">Total</th>
                                             <th width="20%">
                                                 <el-input v-model="search.user" placeholder="Agendada por" title="Escribe para buscar" @input="getAppointments" clearable />
                                             </th>
@@ -291,19 +552,20 @@ const resetFilters = () => {
                                                     <el-option v-for="s in status" :key="s.id" :value="s.id" :label="s.name" />
                                                 </el-select>
                                             </th>
-                                            <th width="15%" class="text-center">Acciones</th>
+                                            <th class="text-center">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr v-if="!appointments.length">
-                                            <td class="text-center" colspan="8">
+                                            <td class="text-center" colspan="9">
                                                 Ningún dato disponible en esta tabla
                                             </td> 
                                         </tr>
                                         <tr v-for="a in appointments">
                                             <td class="text-center">{{ a.id }}</td>
-                                            <td>{{ a.customer.name }}</td>
+                                            <td class="text-center">{{ dateEs(a.date, '/', 1) }}</td>
                                             <td class="text-center">{{ time(a.horary) }}</td>
+                                            <td>{{ a.customer.name }}</td>
                                             <td class="text-center">
                                                 <!-- <span class="badge text-bg-primary mr-2 mb-1" v-for="s in a.services">{{ s.name }}</span> -->
                                                  {{ formatCurrency(a.cost) }}
@@ -408,10 +670,10 @@ const resetFilters = () => {
                                     </tbody>
                                 </table>
                                 <el-pagination
-                                    class="mt-3"
+                                    class="mt-3 custom-pager"
                                     v-model:current-page="pagination.currentPage"
                                     v-model:page-size="pagination.pageSize"
-                                    :page-sizes="[20, 40, 60, 80, 100]"
+                                    :page-sizes="[50, 100, 150, 200, 250]"
                                     layout="sizes, prev, pager, next"
                                     :total="pagination.total"
                                     @size-change="handleSizeChange"
@@ -463,48 +725,27 @@ const resetFilters = () => {
 </template>
 
 <style scoped>
-.card-warning {
-    color: #FFA800;
-    background-color: #FFF4DE;
-    border-color: transparent;
-    cursor: pointer;
-    border-radius: 15px;
+.bg-image {
+    background-image: url('../../../../general/textura.jpg');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
 }
-.card-warning:hover {
-    background-color: #FFA800;
-    color: white;
+.chart-full-height {
+  height: 100%;
 }
-.card-danger {
-    color: #F64E60;
-    background-color: #FFE2E5;
-    border-color: transparent;
-    cursor: pointer;
-    border-radius: 15px;
+.card-chart :deep(.el-card__body) {
+  height: 100%;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 0;
+  padding-top: 25px;
 }
-.card-danger:hover {
-    background-color: #F64E60;
-    color: white;
+.my-select :deep(.el-select__wrapper) {
+    background-color: #EEE5FF !important;
 }
-.card-info {
-    color: #8950FC;
-    background-color: #EEE5FF;
-    border-color: transparent;
-    cursor: pointer;
-    border-radius: 15px;
-}
-.card-info:hover {
-    background-color: #8950FC;
-    color: white;
-}
-.card-success {
-    color: #1BC5BD;
-    background-color: #C9F7F5 ;
-    border-color: transparent;
-    cursor: pointer;
-    border-radius: 15px;
-}
-.card-success:hover {
-    background-color: #1BC5BD;
-    color: white;
+.my-select :deep(.el-select__selected-item) {
+    font-weight: bold !important;
+    color: #8950FC !important;
 }
 </style>

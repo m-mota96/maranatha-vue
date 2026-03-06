@@ -3,32 +3,47 @@ import apiClient from '@/apiClient';
 import { showNotification } from '@/notification';
 import { ref, defineExpose, computed } from 'vue';
 
-const { getParentServices, serviceType } = defineProps({
-    getParentServices: Function,
-    serviceType: Array
+const { getParentServices } = defineProps({
+    getParentServices: Function
 });
 
 const title         = ref('');
 const button        = ref('');
 const dialogVisible = ref(false);
+const serviceType   = ref([]);
 const service       = ref({
     id: null,
     service_type_id: '',
+    service_type_name: '',
     name: '',
     price : '',
     discounted_price: '',
     time: 15,
-    color: ''
+    color: '',
+    require_staff: ''
 });
 const errors = ref({
     service_type_id: false,
     name: false,
     price: false,
     discounted_price: false,
-    time: false
+    time: false,
+    require_staff: false
 });
+const isAdding   = ref(false);
+const optionName = ref('');
 
-const showModal = (_service) => {
+const getServiceType = async () => {
+    const response = await apiClient('admin/serviceTypes');
+    if (response.error) {
+        showNotification(response.msj, '¡Error!', 'error');
+        return
+    }
+    serviceType.value = response.data;
+};
+
+const showModal = async (_service) => {
+    await getServiceType();
     resetErrors();
     title.value                    = 'Crear nuevo servicio';
     button.value                   = 'Guardar';
@@ -56,7 +71,10 @@ const showModal = (_service) => {
 const saveService = async () => {
     if (validate()) {
         const method   = !service.value.id ? 'POST' : 'PUT';
-        const response = await apiClient('admin/service', method, service.value);
+        const response = await apiClient('admin/service', method, {
+            service: service.value,
+            serviceType: serviceType.value.filter(s => s.newRecord)
+        });
         if (response.error) {
             showNotification(response.msj, '¡Error!', 'error', 7500);
             return
@@ -91,6 +109,10 @@ const validate = () => {
         errors.value.time = true;
         valid             = false;
     }
+    if (!service.value.require_staff) {
+        errors.value.require_staff = true;
+        valid                      = false;
+    }
     return valid;
 };
 
@@ -99,7 +121,8 @@ const resetErrors = () => {
     errors.value.name             = false;
     errors.value.price            = false;
     errors.value.discounted_price = false;
-    errors.value.time = false;
+    errors.value.time             = false;
+    errors.value.require_staff    = false;
 };
 
 const getLabel = (n) => {
@@ -125,6 +148,32 @@ const multiplesOf15 = computed(() => {
     return result
 });
 
+const onAddOption = () => {
+    isAdding.value = true;
+};
+
+const onConfirm = () => {
+    if (optionName.value) {
+        const maxId = Math.max(...serviceType.value.map(st => st.id));
+        serviceType.value.push({
+            id: maxId + 1,
+            name: optionName.value,
+            newRecord: true
+        });
+        clear();
+    }
+};
+
+const clear = () => {
+    optionName.value = '';
+    isAdding.value   = false;
+};
+
+const setName = (val) => {
+    const findService               = serviceType.value.find(st => st.id === val);
+    service.value.service_type_name = findService.name;
+};
+
 defineExpose({
     showModal
 });
@@ -139,7 +188,7 @@ defineExpose({
     >
         <el-col :span="24" class="mb-3">
             <label for="serviceType" class="bold">Tipo de servicio <span class="text-danger">*</span></label>
-            <el-select
+            <!-- <el-select
                 class="el-form-item"
                 :class="{'is-error': errors.service_type_id}"
                 id="serviceType"
@@ -152,6 +201,31 @@ defineExpose({
                     :value="s.id"
                     :label="s.name"
                 />
+            </el-select> -->
+            <el-select v-model="service.service_type_id" placeholder="Elige una opción" @change="setName">
+                <el-option
+                    v-for="s in serviceType"
+                    :key="s.id"
+                    :label="s.name"
+                    :value="s.id"
+                />
+                <template #footer>
+                    <el-button v-if="!isAdding" text bg size="small" @click="onAddOption">
+                        Añadir opción
+                    </el-button>
+                    <template v-else>
+                        <el-input
+                            v-model="optionName"
+                            class="option-input mb-2"
+                            placeholder="Escribe la opción"
+                            size="small"
+                        />
+                        <el-button type="primary" size="small" @click="onConfirm">
+                            Confirmar
+                        </el-button>
+                        <el-button size="small" @click="clear">Cancelar</el-button>
+                    </template>
+                </template>
             </el-select>
             <span class="text-danger fs-small" v-if="errors.service_type_id">El tipo de servicio es obligatorio.</span>
         </el-col>
@@ -207,7 +281,15 @@ defineExpose({
         <el-col :span="24" class="mb-3">
             <label for="color" class="bold">Color</label><br>
             <el-color-picker class="w-100" v-model="service.color" />
-             <!-- <el-color-picker-panel v-model="service.color" /> -->
+            <!-- <el-color-picker-panel v-model="service.color" /> -->
+        </el-col>
+        <el-col :span="24" class="mb-3">
+            <label class="bold">¿El servicio requiere ser realizado por alguien del Staff? <span class="text-danger">*</span></label><br>
+            <el-radio-group v-model="service.require_staff">
+                <el-radio :value="true">Si</el-radio>
+                <el-radio :value="false">No</el-radio>
+            </el-radio-group><br>
+            <span class="text-danger fs-small" v-if="errors.require_staff">Elige una opción.</span>
         </el-col>
         <template #footer>
             <div class="dialog-footer">

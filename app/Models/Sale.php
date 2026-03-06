@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use DateTimeInterface;
 
 class Sale extends Model
 {
@@ -12,6 +14,9 @@ class Sale extends Model
         'appointment_id',
         'cash',
         'card',
+        'subtotal',
+        'discount',
+        'type_discount',
         'total',
         'observations',
         'created_by',
@@ -19,7 +24,7 @@ class Sale extends Model
         'deleted_by',
     ];
 
-    public function status() {
+    public function statusSale() {
         return $this->belongsTo(StatusSale::class);
     }
 
@@ -29,5 +34,25 @@ class Sale extends Model
 
     public function appointment() {
         return $this->belongsTo(Appointment::class);
+    }
+
+    public function services() {
+        return $this->hasMany(AppointmentServiceStaff::class);
+    }
+
+    public function inventories() {
+        return $this->hasMany(Inventory::class);
+    }
+    
+    public function createdBy() {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updatedBy() {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    protected function serializeDate(DateTimeInterface $date) {
+        return $date->setTimezone(config('app.timezone'))->format('Y-m-d H:i:s');
     }
 }

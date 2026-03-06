@@ -5,6 +5,7 @@ import apiClient from '@/apiClient';
 import { showNotification } from '@/notification';
 import CreateInventory from './modals/CreateInventory.vue';
 import { dateEs } from '@/dateEs';
+import { format as formatDates } from 'date-fns';
 
 const { module, menu, references } = defineProps({
     module: {
@@ -25,14 +26,15 @@ const createInventoryRef = ref(null);
 const inventories        = ref([]);
 const pagination         = ref({
     currentPage: 1,
-    pageSize: 10,
+    pageSize: 50,
     total: 0
 });
 const search = ref({
     product_name: '',
     type: '',
     reference_id: '',
-    product_cost: ''
+    product_cost: '',
+    dates: []
 });
 const order = ref({
     orderBy: 'created_at',
@@ -40,10 +42,17 @@ const order = ref({
 });
 
 onMounted(() => {
+    setDates();
     getInventory();
 });
 
 const getInventory = async () => {
+    const diference = calculateDiference(search.value.dates[0], search.value.dates[1]);
+    if (diference > 3) {
+        showNotification('El rango máximo de fechas es de 3 meses.', '¡Atención!', 'warning', 9000);
+        setDates();
+        return false;
+    }
     const response = await apiClient('admin/inventories', 'GET', {pagination: pagination.value, search: search.value, order: order.value});
     if (response.error) {
         showNotification(response.msj, '¡Error!', 'error', 7500);
@@ -72,6 +81,7 @@ const resetFilters = () => {
     search.value.type         = '';
     search.value.reference_id = '';
     search.value.product_cost = '';
+    setDates();
     order.value.orderBy       = 'created_at';
     order.value.order         = 'DESC';
     getInventory();
@@ -113,11 +123,48 @@ const to12HourFormat = (horary) => {
 
     return `${horasFormateadas}:${minutes} ${suffix}`;
 };
+
+const setDates = () => {
+    const date     = new Date();
+    const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+    const lastDay  = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    
+    search.value.dates = [formatDates(firstDay, 'yyyy-MM-dd'), formatDates(lastDay, 'yyyy-MM-dd')];
+}
+
+const calculateDiference = (startDate, endDate) => {
+    const start = new Date(startDate);
+    const end   = new Date(endDate);
+
+    // Multiplicamos la diferencia de años por 12 y ajustamos con los meses
+    let months = (end.getFullYear() - start.getFullYear()) * 12;
+    months     -= start.getMonth();
+    months     += end.getMonth();
+
+    // Retornamos 0 si la fecha final es anterior a la inicial
+    return months <= 0 ? 0 : months;
+};
 </script>
 
 <template>
     <Layout :menu="menu" :module="module">
-        <el-col class="mb-2" :span="4" :offset="15">
+        <el-col class="mb-2" :span="5">
+            <label>Fecha de registro</label>
+            <el-date-picker
+                class="el-form-item mb-0 mt-1 w-100"
+                v-model="search.dates"
+                type="daterange"
+                range-separator="A"
+                start-placeholder="Fecha inicial"
+                end-placeholder="Fecha final"
+                placement="bottom-start"
+                format="DD/MM/YYYY"
+                value-format="YYYY-MM-DD"
+                :clearable="false"
+                @change="getInventory"
+            />
+        </el-col>
+        <el-col class="mb-2" :span="4" :offset="10">
             <label for="order">Ordenar por</label>
             <el-select v-model="order.orderBy" @change="getInventory" id="order">
                 <el-option :key="0" label="Fecha de creación" value="created_at" />
@@ -244,10 +291,10 @@ const to12HourFormat = (horary) => {
                 </el-table-column>
             </el-table>
             <el-pagination
-                class="mt-3"
+                class="mt-3 custom-pager"
                 v-model:current-page="pagination.currentPage"
                 v-model:page-size="pagination.pageSize"
-                :page-sizes="[10, 20, 30, 40, 50]"
+                :page-sizes="[50, 100, 150, 200, 250]"
                 layout="sizes, prev, pager, next"
                 :total="pagination.total"
                 @size-change="handleSizeChange"

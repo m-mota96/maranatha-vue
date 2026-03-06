@@ -218,11 +218,14 @@ const filterRecords = computed(() => {
 });
 
 const setPrice = (allServiceId, serviceId) => {
-    const filteredService                          = allServices.value.find((s) => s.id === allServiceId);
-    const index  = servicesAndProducts.value.findIndex(sp => sp.id === serviceId);
-    servicesAndProducts.value[index].service_id    = filteredService.id;
-    servicesAndProducts.value[index].price         = filteredService.price;
-    servicesAndProducts.value[index].require_staff = filteredService.require_staff;
+    let filteredService = null;
+    if (allServiceId) {
+        filteredService = allServices.value.find((s) => s.id === allServiceId);
+    }
+    const index                                    = servicesAndProducts.value.findIndex(sp => sp.id === serviceId);
+    servicesAndProducts.value[index].service_id    = filteredService ? filteredService.id : null;
+    servicesAndProducts.value[index].price         = filteredService ? filteredService.price : 0;
+    servicesAndProducts.value[index].require_staff = filteredService ? filteredService.require_staff : false;
     calculateTotal();
 }
 
@@ -316,6 +319,12 @@ const checkPaymentMethod = (_value) => {
     }
 };
 
+const filterStaffByService = (service_id) => {
+    return staff.value.filter(person => 
+        person.services.some(service => service.id === service_id)
+    );
+};
+
 const querySearch = async (queryString, cb) => {
     if (queryString.length < 3) {
         cb([]);
@@ -364,7 +373,7 @@ defineExpose({
     <el-dialog
         v-model="dialogVisible"
         title="Registrar venta"
-        width="1600"
+        width="95%"
         style="margin-top: 1% !important;"
     >
         <el-row :gutter="30" class="mb-4">
@@ -380,7 +389,7 @@ defineExpose({
                             <th class="!bg-blue-100 text-dark bold text-center">Hora final</th>
                             <th class="!bg-blue-100 text-dark bold text-center">Precio</th>
                             <th class="!bg-blue-100 text-dark bold text-center w-10">Cantidad</th>
-                            <th class="!bg-blue-100 text-dark bold text-center">Subtotal</th>
+                            <th class="!bg-blue-100 text-dark bold text-center">Importe</th>
                             <th class="!bg-blue-100 text-dark bold text-center">
                                 <el-tooltip content="Añadir servicio o producto" effect="customized" placement="top">
                                     <el-button class="btn-success" size="small" @click="addService">
@@ -444,7 +453,7 @@ defineExpose({
                                     clearable
                                     :filterable="true"
                                 >
-                                    <el-option v-for="st in staff" :key="st.id" :value="st.id" :label="`${st.name} ${st.first_name} ${st.last_name}`" />
+                                    <el-option v-for="st in filterStaffByService(s.service_id)" :key="st.id" :value="st.id" :label="`${st.name} ${st.first_name} ${st.last_name}`" />
                                 </el-select>
                                 <span v-if="s.newRecord && (s.type === 'Producto' || !s.require_staff)">N/A</span>
                             </td>

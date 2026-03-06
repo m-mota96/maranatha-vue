@@ -30,7 +30,7 @@ const createEditStaffRef = ref(null);
 const staff              = ref([]);
 const pagination         = ref({
     currentPage: 1,
-    pageSize: 10,
+    pageSize: 20,
     total: 0
 });
 const search = ref({
@@ -194,10 +194,14 @@ const handleCurrentChange = (val) => {
                 </el-table-column>
                 <!-- <el-table-column prop="curp" label="Curp" />
                 <el-table-column prop="rfc" label="Rfc" /> -->
-                <el-table-column prop="commission" label="Comisión" />
+                <el-table-column label="Comisión" align="center">
+                    <template #default="scope">
+                        {{ scope.row.commission ? scope.row.commission+'%' : '' }}
+                    </template>
+                </el-table-column>
                 <el-table-column label="Servicios" width="300">
                     <template #default="scope">
-                        <span class="badge text-bg-primary me-1" v-for="(s, i) in scope.row.services" :key="i">{{ s.name }}</span>
+                        <span class="badge text-bg-primary me-1" v-for="(s, i) in scope.row.services" :key="i">{{ s.name }} ({{ s.time }} min.)</span>
                     </template>
                 </el-table-column>
                 <el-table-column align="center" width="150">
@@ -271,10 +275,10 @@ const handleCurrentChange = (val) => {
                 </el-table-column>
             </el-table>
             <el-pagination
-                class="mt-3"
+                class="mt-3 custom-pager"
                 v-model:current-page="pagination.currentPage"
                 v-model:page-size="pagination.pageSize"
-                :page-sizes="[10, 20, 30, 40, 50]"
+                :page-sizes="[20, 40, 60, 80, 100]"
                 layout="sizes, prev, pager, next"
                 :total="pagination.total"
                 @size-change="handleSizeChange"

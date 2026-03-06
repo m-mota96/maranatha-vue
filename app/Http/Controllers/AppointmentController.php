@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Http\Traits\Response;
 use App\Models\Appointment;
 use App\Models\AppointmentServiceStaff;
@@ -15,6 +16,8 @@ class AppointmentController extends Controller {
             if (sizeof($request->services) === 0) {
                 return Response::response('No agregaste ningún servicio.', null, true, 409);
             }
+
+            DB::beginTransaction();
             $appointment = Appointment::create([
                 'customer_id'           => $request->customer_id,
                 'appointment_status_id' => 1,
@@ -31,10 +34,15 @@ class AppointmentController extends Controller {
                     'discounted_price' => $services[$i]['discounted_price'],
                     'start_time'       => $services[$i]['start_time'],
                     'end_time'         => $services[$i]['end_time'],
+                    'created_by'       => auth()->user()->id,
+                    'created_at'       => date('Y-m-d H:i:s'),
+                    'updated_at'       => date('Y-m-d H:i:s')
                 ]);
             }
+            DB::commit();
             return Response::response('La cita se agendó correctamente.');
         } catch (\Throwable $th) {
+            DB::rollBack();
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
         }
     }
@@ -74,6 +82,7 @@ class AppointmentController extends Controller {
             $appointments = $query->orderBy($orderBy, $orderDir)->paginate($limit, ['*'], 'page', $pagination['currentPage']);
             $scheduled    = Appointment::where('date', $search['currentDate'])->where('appointment_status_id', 1)->count();
             $confirmed    = Appointment::where('date', $search['currentDate'])->where('appointment_status_id', 4)->count();
+            $finished     = Appointment::where('date', $search['currentDate'])->where('appointment_status_id', 5)->count();
             $canceled     = Appointment::where('date', $search['currentDate'])->where('appointment_status_id', 2)->count();
             
             return Response::response(null, [
@@ -82,6 +91,7 @@ class AppointmentController extends Controller {
                 'scheduled'    => $scheduled,
                 'confirmed'    => $confirmed,
                 'canceled'     => $canceled,
+                'finished'     => $finished
             ]);
         } catch (\Throwable $th) {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);

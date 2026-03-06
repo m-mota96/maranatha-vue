@@ -25,7 +25,7 @@ class Customer extends Model
         'deleted_by',
     ];
 
-    public function appoiments() {
-        return $this->hasMany(Appoiment::class);
+    public function appointments() {
+        return $this->hasMany(Appointment::class);
     }
 }

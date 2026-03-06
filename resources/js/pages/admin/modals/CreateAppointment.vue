@@ -105,6 +105,14 @@ const validate = () => {
     services.value.forEach(s => {
         const require_staff = s.require_staff && !s.staff_id ? true : false;
         errors.value.staff_id.push(require_staff);
+        if (s.require_staff && !s.staff_id) {
+            valid = false;
+        }
+        const horary = !s.start_time ? true : false;
+        errors.value.horary_services.push(horary);
+        if (horary) {
+            valid = false;
+        }
     });
 
     // const hasConflict = hasCrossBetweenStaffAndNonStaff(services.value);
@@ -507,7 +515,7 @@ defineExpose({
     <el-dialog
         v-model="dialogVisible"
         :title="title"
-        width="1800"
+        width="95%"
         style="margin-top: 1% !important;"
     >
     <el-row :gutter="10">
@@ -657,6 +665,7 @@ defineExpose({
                                 v-if="form.horary && (formatDates(form.date, 'yyyy-MM-dd') > formatDates(new Date, 'yyyy-MM-dd'))"
                                 v-model="s.initial_time"
                                 class="el-form-item"
+                                :class="{'is-error': errors.horary_services[i]}"
                                 start="11:00"
                                 step="00:5"
                                 end="20:00"
@@ -668,6 +677,7 @@ defineExpose({
                                 v-if="form.horary && (formatDates(form.date, 'yyyy-MM-dd') <= formatDates(new Date, 'yyyy-MM-dd'))"
                                 v-model="s.initial_time"
                                 class="el-form-item"
+                                :class="{'is-error': errors.horary_services[i]}"
                                 :start="roundToStep(new Date(), 5)"
                                 step="00:5"
                                 end="20:00"
@@ -675,6 +685,7 @@ defineExpose({
                                 format="hh:mm A"
                                 @change="(val) => editHorary(val, i)"
                             />
+                            <span class="text-danger fs-small" v-if="errors.horary_services[i]">Elige la hora.</span>
                         </td>
                         <td class="text-center" width="150">
                             <span>{{ s.final_time }}</span>

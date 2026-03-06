@@ -20,6 +20,7 @@ const schedule = ref([{
     meal_end_time: '',
     end_time: ''
 }]);
+const workDay = ref([]);
 const errors= ref([]);
 
 const saveSchedule = async () => {
@@ -56,6 +57,7 @@ const validate = () => {
 }
 
 const showModal = (_id, _staff_name, _info_schedules) => {
+    // console.log(week.value)
     resetForm();
     staff_name.value      = _staff_name;
     staff_schedules.value = JSON.parse(JSON.stringify(_info_schedules));
@@ -77,6 +79,10 @@ const showModal = (_id, _staff_name, _info_schedules) => {
         errors.value.push(false);
     }
     dialogVisible.value = true;
+};
+
+const setDay = () => {
+    console.log(workDay.value);
 };
 
 const resetForm = () => {
@@ -136,11 +142,13 @@ const areSchedulesValid = (schedules) => {
     });
 };
 
-const resetSchedule = (index) => {
-    staff_schedules.value[index].start_time      = '';
-    staff_schedules.value[index].meal_start_time = '';
-    staff_schedules.value[index].meal_end_time   = '';
-    staff_schedules.value[index].end_time        = '';
+const resetSchedule = (val, index) => {
+    if (!val) {
+        staff_schedules.value[index].start_time      = '';
+        staff_schedules.value[index].meal_start_time = '';
+        staff_schedules.value[index].meal_end_time   = '';
+        staff_schedules.value[index].end_time        = '';
+    }
 };
 
 defineExpose({
@@ -152,10 +160,69 @@ defineExpose({
     <el-dialog
         v-model="dialogVisible"
         :title="`Horario de ${staff_name}`"
-        width="1200"
+        width="90%"
         style="margin-top: 2% !important;"
     >
-        <el-table
+        <label class="bold">Jornada <span class="text-danger">*</span></label>
+        <el-checkbox-group v-model="workDay">
+            <el-checkbox-button v-for="w in week" :key="w" :value="w" @change="setDay">
+                {{ w }}
+            </el-checkbox-button>
+        </el-checkbox-group>
+        <label class="bold mt-3">Horario <span class="text-danger">*</span></label>
+        <el-row :gutter="20" class="mb-5">
+            <el-col :span="4" v-for="wd in workDay">
+                <el-card class="mb-4">
+                    <p class="text-base text-dark text-center">{{ wd }}</p>
+                    <el-divider />
+                    <p class="!text-purple-600 mb-0">Entrada <span class="text-danger">*</span></p>
+                    <el-time-select
+                        class="el-form-item w-100"
+                        :class="{'is-error': false}"
+                        start="08:00"
+                        step="00:5"
+                        end="20:00"
+                        placeholder="Hora"
+                        format="hh:mm A"
+                        clearable
+                    />
+                    <p class="!text-purple-600 mb-0 mt-3">Salida a comida</p>
+                    <el-time-select
+                        class="el-form-item w-100"
+                        :class="{'is-error': false}"
+                        start="08:00"
+                        step="00:5"
+                        end="20:00"
+                        placeholder="Hora"
+                        format="hh:mm A"
+                        clearable
+                    />
+                    <p class="!text-purple-600 mb-0 mt-3">Entrada de comida</p>
+                    <el-time-select
+                        class="el-form-item w-100"
+                        :class="{'is-error': false}"
+                        start="08:00"
+                        step="00:5"
+                        end="20:00"
+                        placeholder="Hora"
+                        format="hh:mm A"
+                        clearable
+                    />
+                    <p class="!text-purple-600 mb-0 mt-3">Salida <span class="text-danger">*</span></p>
+                    <el-time-select
+                        class="el-form-item w-100"
+                        :class="{'is-error': false}"
+                        start="08:00"
+                        step="00:5"
+                        end="20:00"
+                        placeholder="Hora"
+                        format="hh:mm A"
+                        clearable
+                    />
+                </el-card>
+            </el-col>
+        </el-row>
+        <!-- <el-table
             :data="schedule"
             stripe
             empty-text="Ningún dato disponible en esta tabla"
@@ -305,10 +372,10 @@ defineExpose({
             </el-table-column>
             <el-table-column label="¿Trabaja este día?" align="center" width="150">
                 <template #default="scope">
-                    <el-checkbox v-model="scope.row.status" :true-value="1" :false-value="0" size="large" @change="resetSchedule(scope.$index)" />
+                    <el-checkbox v-model="scope.row.status" :true-value="1" :false-value="0" size="large" @change="(val) => resetSchedule(val, scope.$index)" />
                 </template>
             </el-table-column>
-        </el-table>
+        </el-table> -->
         <template #footer>
             <div class="dialog-footer">
                 <el-button @click="dialogVisible = false">Cancelar</el-button>

@@ -5,7 +5,7 @@ import apiClient from '@/apiClient';
 import { showNotification } from '@/notification';
 import CreateEditService from './modals/CreateEditService.vue';
 
-const { module, menu, serviceType } = defineProps({
+const { module, menu } = defineProps({
     module: {
         type: Object,
         required: true
@@ -13,18 +13,15 @@ const { module, menu, serviceType } = defineProps({
     menu: {
         type: Array,
         required: true
-    },
-    serviceType: {
-        type: Array,
-        required: true
     }
 });
 
 const createEditServiceRef = ref(null);
 const services             = ref([]);
+const serviceType          = ref([]);
 const pagination           = ref({
     currentPage: 1,
-    pageSize: 10,
+    pageSize: 50,
     total: 0
 });
 const search = ref({
@@ -49,13 +46,23 @@ const getServices = async () => {
         showNotification(response.msj, '¡Error!', 'error', 7500);
         return
     }
+    getServiceType();
     services.value = response.data.services;
     pagination.value.total = response.data.totalRows;
 };
 
+const getServiceType = async () => {
+    const response = await apiClient('admin/serviceTypes');
+    if (response.error) {
+        showNotification(response.msj, '¡Error!', 'error');
+        return
+    }
+    serviceType.value = response.data;
+};
+
 const statusService = async (_service) => {
     _service.status = _service.status === 1 ? 0 : 1;
-    const response = await apiClient('admin/service', 'PUT', _service);
+    const response = await apiClient('admin/service', 'PUT', { service: _service });
     if (response.error) {
         showNotification(response.msj, '¡Error!', 'error');
         return
@@ -243,10 +250,10 @@ const handleCurrentChange = (val) => {
                 </el-table-column>
             </el-table>
             <el-pagination
-                class="mt-3"
+                class="mt-3 custom-pager"
                 v-model:current-page="pagination.currentPage"
                 v-model:page-size="pagination.pageSize"
-                :page-sizes="[10, 20, 30, 40, 50]"
+                :page-sizes="[50, 100, 150, 200, 250]"
                 layout="sizes, prev, pager, next"
                 :total="pagination.total"
                 @size-change="handleSizeChange"
@@ -254,7 +261,7 @@ const handleCurrentChange = (val) => {
             />
         </el-col>
     </Layout>
-    <CreateEditService ref="createEditServiceRef" :get-parent-services="getServices" :serviceType="serviceType" />
+    <CreateEditService ref="createEditServiceRef" :get-parent-services="getServices" />
 </template>
 
 <style scoped>

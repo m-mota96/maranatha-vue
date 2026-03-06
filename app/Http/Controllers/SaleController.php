@@ -11,15 +11,99 @@ use App\Http\Traits\Response;
 use App\Models\Appointment;
 use App\Models\AppointmentServiceStaff;
 use App\Models\Inventory;
+use App\Models\PaymentMethod;
 use App\Models\Sale;
+use App\Models\StatusSale;
 
 class SaleController extends Controller {
     public function sales() {
+        $target = collect(request()->segments())->last();
+        $module = Modules::module($target);
+        if (empty($module)) {
+            return redirect('administrador/inicio');
+        }
 
+        return Inertia::render('admin/Sale', [
+            'module'         => $module,
+            'menu'           => Modules::modulesMenu(),
+            'statusSales'    => StatusSale::whereNotIn('id', [3])->orderBy('name')->get(),
+            'paymentMethods' => PaymentMethod::orderBy('name')->get()
+        ]);
     }
 
-    public function getSales() {
+    public function getSales(Request $request) {
+        try {
+            $pagination = $request->pagination;
+            $limit      = $pagination['pageSize']; // Tamaño de la página
+            $search     = $request->search;
+            $order      = $request->order;
 
+            $allowedColumns = ['created_at', 'payment_method_id', 'subtotal', 'total', 'status'];
+
+            $orderBy = in_array($order['orderBy'] ?? '', $allowedColumns)
+                ? $order['orderBy']
+                : 'created_at';
+
+            $orderDir = strtolower($order['order'] ?? '') === 'asc' ? 'asc' : 'desc';
+
+            $query = Sale::with([
+                'appointment:id,customer_id',
+                'appointment.customer:id,name',
+                'appointment.services:id,name,time',
+                'statusSale',
+                'paymentMethod:id,name',
+                'services',
+                'createdBy:id,name',
+                'updatedBy:id,name'
+            ]);
+
+            if (!empty($search['dates'])) $query->whereBetween('created_at', [$search['dates'][0], $search['dates'][1]]);
+
+            if (!empty($search['customer'])) {
+                $query->whereHas('appointment.customer', function($q) use($search) {
+                    $q->whereLike('name', '%'.$search['customer'].'%');
+                });
+            }
+
+            if (!empty($search['payment_method'])) $query->where('payment_method_id', $search['payment_method']);
+
+            if (!empty($search['subtotal'])) $query->where('subtotal', $search['subtotal']);
+
+            if (!empty($search['total'])) $query->where('total', $search['total']);
+
+            if (!empty($search['user_register'])) {
+                $query->whereHas('createdBy', function($q) use($search) {
+                    $q->whereLike('name', '%'.$search['user_register'].'%');
+                });
+            }
+
+            if (!empty($search['user_cancel'])) {
+                $query->whereHas('updatedBy', function($q) use($search) {
+                    $q->whereLike('name', '%'.$search['user_cancel'].'%');
+                });
+            }
+
+            if (!empty($search['status'])) $query->where('status_sale_id', $search['status']);
+            
+            $sales = $query->orderBy($orderBy, $orderDir)->paginate($limit, ['*'], 'page', $pagination['currentPage']);
+            return Response::response(null, ['sales' => $sales->items(), 'totalRows' => $sales->total()]);
+        } catch (\Throwable $th) {
+            return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', $th->getMessage(), true, 500);
+        }
+    }
+
+    public function getSale(Request $request) {
+        try {
+            $sale = Sale::with([
+                'appointment:id',
+                'appointment.services:id,name',
+                'inventories:id,sale_id,product_id,price,quantity',
+                'inventories.product:id,name,content,abreviation,brand,type_sale'
+            ])->first();
+            return Response::response(null, $sale);
+        } catch (\Throwable $th) {
+            return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', $th->getMessage(), true, 500);
+        }
     }
 
     public function saveSale(Request $request) {
@@ -51,15 +135,36 @@ class SaleController extends Controller {
                 :
                 null;
             
-            $total = $discount ? $sale->subtotal - $discount : $sale->subtotal;
+            $total      = $discount ? $sale->subtotal - $discount : $sale->subtotal;
+            $amountCash = $sale->total;
+            $amountCard = $sale->total;
+            switch ($sale->payment_method) {
+                case 1: //Efectivo
+                    $amountCard = 0;
+                    break;
+                case 2: // Efectivo y Tarjeta
+                    $amountCash = $sale->amount_cash;
+                    $amountCard = $sale->amount_card;
+                    break;
+                case 3: // Tarjeta
+                    $amountCash = 0;
+                    break;
+                case 4: // Transferencia
+                    $amountCash = 0;
+                    $amountCard = $sale->amount_card;
+                    break;
+            }
 
             DB::beginTransaction();
             $sale = Sale::create([
                 'status_sale_id' => 1, // Activa
                 'payment_method_id' => $sale->payment_method,
                 'appointment_id'    => !empty($sale->appointment_id) ? $sale->appointment_id : null,
-                'cash'              => (in_array($sale->payment_method, [1, 2])) ? $sale->amount_cash : null,
-                'card'              => (in_array($sale->payment_method, [3, 4])) ? $sale->amount_cash : null,
+                'cash'              => $amountCash,
+                'card'              => $amountCard,
+                'subtotal'          => $sale->subtotal,
+                'discount'          => $sale->discount ? $sale->discount : null,
+                'type_discount'     => $sale->discount ? $sale->type_discount : null,
                 'total'             => $total,
                 'observations'      => $sale->observations,
                 'created_by'        => auth()->user()->id
@@ -89,10 +194,26 @@ class SaleController extends Controller {
         }
     }
 
+    public function editSale(Request $request) {
+        try {
+            $sale                 = Sale::find($request->id);
+            $sale->observations   = $request->observations;
+            $sale->status_sale_id = $request->status;
+            $sale->updated_by     = auth()->user()->id;
+            $sale->save();
+            Response::response('La venta se canceló correctamente.');
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', $th->getMessage(), true, 500);
+        }
+    }
+
     private function checkServices($services) {
         foreach ($services as $key => $s) {
             if (!$s->newRecord) { // Si no es un nuevo registro entonces nos indica que estan eliminando uno de los que agendo en la cita
-                $service = AppointmentServiceStaff::find($s->id);
+                $service             = AppointmentServiceStaff::find($s->id);
+                $service->deleted_by = auth()->user()->id;
+                $service->save();
                 $service->delete();
             } else { // Si es nuevo registro es porque le realizaron otro distinto durante su estadia y se lo registraron al momento de la venta
                 AppointmentServiceStaff::create([

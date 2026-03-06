@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AppointmentServiceStaff extends Model
 {
+    use HasFactory;
+    use SoftDeletes;
+    
     protected $table = 'appointment_service';
-
-    public $timestamps = false;
 
     protected $fillable = [
         'appointment_id',
@@ -19,6 +22,9 @@ class AppointmentServiceStaff extends Model
         'discounted_price',
         'start_time',
         'end_time',
+        'created_by',
+        'updated_by',
+        'deleted_by'
     ];
 
     public function appointment() {

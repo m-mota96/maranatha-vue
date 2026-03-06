@@ -20,7 +20,7 @@ const createEditPositionRef = ref(null);
 const positions             = ref([]);
 const pagination            = ref({
     currentPage: 1,
-    pageSize: 10,
+    pageSize: 20,
     total: 0
 });
 const search = ref({
@@ -185,10 +185,10 @@ const handleCurrentChange = (val) => {
                 </el-table-column>
             </el-table>
             <el-pagination
-                class="mt-3"
+                class="mt-3 custom-pager"
                 v-model:current-page="pagination.currentPage"
                 v-model:page-size="pagination.pageSize"
-                :page-sizes="[10, 20, 30, 40, 50]"
+                :page-sizes="[20, 40, 60, 80, 100]"
                 layout="sizes, prev, pager, next"
                 :total="pagination.total"
                 @size-change="handleSizeChange"

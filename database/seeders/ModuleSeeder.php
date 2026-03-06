@@ -166,6 +166,33 @@ class ModuleSeeder extends Seeder
             'updated_at' => date('Y-m-d H:i:s'),
         ];
 
+        $modules[17] = [
+            'module_id' => null,
+            'name' => 'Contabilidad',
+            'target' => null,
+            'icon' => 'fas, chart-line',
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $modules[18] = [
+            'module_id' => 18,
+            'name' => 'Ventas',
+            'target' => 'contabilidad_ventas',
+            'icon' => null,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $modules[19] = [
+            'module_id' => 18,
+            'name' => 'Estadísticas',
+            'target' => 'contabilidad_estadisticas',
+            'icon' => null,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
         Module::insert($modules);
     }
 }

@@ -20,9 +20,7 @@ class StaffController extends Controller {
             return redirect('administrador/inicio');
         }
 
-        $services = Service::whereHas('service_type', function($q) {
-            $q->whereNotIn('name', ['Temazcal']);
-        })->where('status', 1)->get();
+        $services = Service::select('id', 'name', 'time')->where('status', 1)->where('require_staff', true)->orderBy('name')->get();
         return Inertia::render('admin/Staff', [
             'module'    => $module,
             'menu'      => Modules::modulesMenu(),
@@ -66,7 +64,7 @@ class StaffController extends Controller {
 
     public function getAllStaff() {
         try {
-            $staff = Staff::where('status', 1)->orderBy('first_name')->get();
+            $staff = Staff::with(['services'])->where('status', 1)->orderBy('first_name')->get();
             return Response::response(null, $staff);
         } catch (\Throwable $th) {
             return Response::response($th->getMessage(), null, true, 500);

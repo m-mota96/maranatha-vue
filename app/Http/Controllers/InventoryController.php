@@ -56,6 +56,8 @@ class InventoryController extends Controller {
             if (!empty($search['reference_id'])) $query->where('reference_id', $search['reference_id']);
 
             if (!empty($search['product_cost'])) $query->whereLike('product_cost', '%'.$search['product_cost'].'%');
+
+            if (!empty($search['dates'])) $query->whereBetween('created_at', [$search['dates'][0], $search['dates'][1]]);
             
             $inventories = $query->orderBy($orderBy, $orderDir)->paginate($limit, ['*'], 'page', $pagination['currentPage']);
             return Response::response(null, ['inventories' => $inventories->items(), 'totalRows' => $inventories->total()]);

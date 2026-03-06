@@ -20,8 +20,7 @@ class ServiceController extends Controller {
 
         return Inertia::render('admin/Service', [
             'module'      => $module,
-            'menu'        => Modules::modulesMenu(),
-            'serviceType' => ServiceType::orderBy('name')->get()
+            'menu'        => Modules::modulesMenu()
         ]);
     }
 
@@ -90,13 +89,26 @@ class ServiceController extends Controller {
 
     public function saveService(Request $request) {
         try {
+            $serviceType = isset($request->serviceType) ? $request->serviceType : [];
+            $service     = (object) $request->service;
+            if (sizeof($serviceType) > 0) {
+                foreach ($serviceType as $key => $s) {
+                    ServiceType::create([
+                        'name' => $s['name'],
+                    ]);
+                }
+                $serviceType              = ServiceType::where('name', $service->service_type_name)->first();
+                $service->service_type_id = $serviceType->id;
+            }
+            
             Service::create([
-                'service_type_id'  => $request->service_type_id,
-                'name'             => $request->name,
-                'price'            => $request->price,
-                'discounted_price' => $request->discounted_price,
-                'time'             => $request->time,
-                'color'            => $request->color,
+                'service_type_id'  => $service->service_type_id,
+                'name'             => $service->name,
+                'price'            => $service->price,
+                'discounted_price' => $service->discounted_price,
+                'time'             => $service->time,
+                'color'            => $service->color,
+                'require_staff'    => $service->require_staff,
                 'created_by'       => auth()->user()->id
             ]);
             return Response::response('El servicio se guardo correctamente.');
@@ -107,20 +119,33 @@ class ServiceController extends Controller {
 
     public function editService(Request $request) {
         try {
-            $txt                       = 'modificó';
-            $service                   = Service::find($request->id);
-            $service->service_type_id  = $request->service_type_id;
-            $service->name             = $request->name;
-            $service->price            = $request->price;
-            $service->discounted_price = $request->discounted_price;
-            $service->time             = $request->time;
-            $service->color            = $request->color;
-            if ($request->status === 0 || $request->status === 1) {
-                $service->status = $request->status;
-                $txt             = $request->status === 1 ? 'activo' : 'desactivo';
+            $serviceType = isset($request->serviceType) ? $request->serviceType : [];
+            $service     = (object) $request->service;
+            if (sizeof($serviceType) > 0) {
+                foreach ($serviceType as $key => $s) {
+                    ServiceType::create([
+                        'name' => $s['name'],
+                    ]);
+                }
+                $serviceType              = ServiceType::where('name', $service->service_type_name)->first();
+                $service->service_type_id = $serviceType->id;
             }
-            $service->updated_by = auth()->user()->id;
-            $service->save();
+
+            $txt                       = 'modificó';
+            $findService                   = Service::find($service->id);
+            $findService->service_type_id  = $service->service_type_id;
+            $findService->name             = $service->name;
+            $findService->price            = $service->price;
+            $findService->discounted_price = $service->discounted_price;
+            $findService->time             = $service->time;
+            $findService->color            = $service->color;
+            $findService->require_staff    = $service->require_staff;
+            if ($service->status === 0 || $service->status === 1) {
+                $findService->status = $service->status;
+                $txt                 = $service->status === 1 ? 'activo' : 'desactivo';
+            }
+            $findService->updated_by = auth()->user()->id;
+            $findService->save();
             return Response::response('El servicio se '.$txt.' correctamente.');
         } catch (\Throwable $th) {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
