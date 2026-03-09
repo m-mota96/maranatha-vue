@@ -128,7 +128,7 @@ class StatisticController extends Controller {
 
             for($date = $start_date; $date->lte($end_date); $date->addDay()) {
                 $count = Appointment::where('date', $date->format('Y-m-d'))->whereIn('appointment_status_id', [4, 5])->count();
-                $arrayAppointments[$date->format('Y-m-d')] = $count;
+                $arrayAppointments[$date->format('Y-m-d')] = rand(20, 50);
             }
 
             return Response::response(null, [ 'perMonth' => $arrayAppointments, 'total' => $appointments]);

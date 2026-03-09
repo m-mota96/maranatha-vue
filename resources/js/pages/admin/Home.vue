@@ -394,7 +394,7 @@ const resetFilters = () => {
         <el-col :span="24">
             <el-row :gutter="20">
                 <el-col :lg="6" class="mb-4">
-                    <el-card class="wave wave-animate-slow wave-success" style="height: 20vh;">
+                    <el-card class="wave wave-animate-slow wave-success" style="height: 25vh;">
                         <el-row :gutter="30" style="z-index: 999; height: 100%;">
                             <el-col :span="12">
                                 <h5 class="text-secondary mb-3 text-center">Clientes</h5>
@@ -421,7 +421,7 @@ const resetFilters = () => {
                     </el-card>
                 </el-col>
                 <el-col :lg="6" class="mb-4">
-                    <el-card class="wave wave-animate-slow wave-info p-0" style="height: 20vh;">
+                    <el-card class="wave wave-animate-slow wave-info p-0" style="height: 25vh;">
                         <table class="w-100 pr text-sm" style="z-index: 999; height: 100%;">
                             <thead>
                                 <tr>
@@ -469,7 +469,7 @@ const resetFilters = () => {
                     </el-card>
                 </el-col>
                 <el-col :lg="6" class="mb-4">
-                    <el-card class="bg-image p-0" style="height: 20vh;">
+                    <el-card class="bg-image p-0" style="height: 25vh;">
                         <el-row :gutter="20">
                             <el-col :span="24" class="">
                                 <h5 class="text-secondary mb-3">Servicios por día</h5>
@@ -484,7 +484,7 @@ const resetFilters = () => {
                                     :style="{'background-color': s.service.color}"
                                 >
                                     <span class="text-white bold">
-                                        {{ s.service.name.length < 17 ? s.service.name : s.service.name.substring(0, 16)+'...' }}
+                                        {{ s.service.name.length < 13 ? s.service.name : s.service.name.substring(0, 12)+'...' }}
                                     </span>
                                     <span class="text-white bold pa" style="right: 20px;">{{ s.total }}</span>
                                 </div>
@@ -493,14 +493,14 @@ const resetFilters = () => {
                     </el-card>
                 </el-col>
                 <el-col :lg="6" class="mb-4">
-                    <el-card class="card-chart" style="height: 20vh;" body-style="height: 100%; box-sizing: border-box;">
+                    <el-card class="card-chart" style="height: 25vh;" body-style="height: 100%; box-sizing: border-box;">
                         <highcharts
                             :options="chart"
                             class="chart-full-height"
                         />
                     </el-card>
                 </el-col>
-                <el-col :span="18">
+                <el-col :span="17">
                     <el-card class="pt-0 pb-6">
                         <el-row>
                             <el-col :span="12" class="mb-4">
@@ -576,7 +576,7 @@ const resetFilters = () => {
                                                 <p v-if="a.appointment_status_id === 2" class="mb-0"><b>Canceló: </b>{{ a.updated_by.name }}</p>
                                             </td>
                                             <td class="text-center bold" :class="setClass(a.status.name)">{{ a.status.name }}</td>
-                                            <td class="text-center">
+                                            <td class="text-center w-25">
                                                 <el-button-group>
                                                     <el-tooltip v-if="a.appointment_status_id === 1" content="Enviar msj. para confirmación" effect="customized" placement="top">
                                                         <el-button
@@ -683,31 +683,31 @@ const resetFilters = () => {
                         </el-row>
                     </el-card>
                 </el-col>
-                <el-col :span="6">
+                <el-col :span="7">
                     <el-card class="pt-0 ps-6 pe-6 pb-0">
                         <el-row :gutter="20">
                             <el-col :span="24" class="text-center mb-4 text-secondary">
                                 <h5>Accesos rápidos</h5>
                             </el-col>
                             <el-col :span="12" class="mb-3">
-                                <div class="card-warning p-4" @click="newAppoiment()">
+                                <div class="card-warning p-4" style="height: 150px;" @click="newAppoiment()">
                                     <h1 class="text-center"><font-awesome-icon :icon="['fas', 'clipboard']" /></h1>
                                     <h6 class="text-center">Agendar cita</h6>
                                 </div>
                             </el-col>
                             <el-col :span="12" class="mb-3">
-                                <div class="card-success p-4" @click="newAppoiment()">
+                                <div class="card-success p-4" style="height: 150px;" @click="newAppoiment()">
                                     <h1 class="text-center"><font-awesome-icon :icon="['far', 'calendar-alt']" /></h1>
                                     <h6 class="text-center">Agenda</h6>
                                 </div>
                             </el-col>
                             <el-col :span="12" class="mb-3">
-                                <div  class="card-danger p-4">
+                                <div  class="card-danger p-4" style="height: 150px;">
                                     <h1 class="text-center"><font-awesome-icon :icon="['fas', 'dollar-sign']" /></h1>
                                     <h6 class="text-center">Venta rápida</h6>
                                 </div>
                             </el-col>
-                            <el-col :span="12" class="mb-3">
+                            <el-col :span="12" class="mb-3" style="height: 150px;">
                                 <div  class="card-info p-4" @click="newCustomer()">
                                     <h1 class="text-center"><font-awesome-icon :icon="['fas', 'user-plus']" /></h1>
                                     <h6 class="text-center">Nuevo miembro</h6>
