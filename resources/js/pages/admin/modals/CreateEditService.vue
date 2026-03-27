@@ -54,6 +54,7 @@ const showModal = async (_service) => {
     service.value.discounted_price = '';
     service.value.time             = 15;
     service.value.color            = '';
+    service.value.require_staff    = '';
     if (_service) {
         title.value                    = 'Editar servicio';
         button.value                   = 'Guardar cambios';
@@ -64,6 +65,7 @@ const showModal = async (_service) => {
         service.value.discounted_price = _service.discounted_price;
         service.value.time             = _service.time;
         service.value.color            = _service.color;
+        service.value.require_staff    = _service.require_staff;
     }
     dialogVisible.value = true;
 };
@@ -109,7 +111,7 @@ const validate = () => {
         errors.value.time = true;
         valid             = false;
     }
-    if (!service.value.require_staff) {
+    if (service.value.require_staff !== true && service.value.require_staff !== false) {
         errors.value.require_staff = true;
         valid                      = false;
     }
