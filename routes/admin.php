@@ -10,6 +10,7 @@ use App\Http\Controllers\ModulePermissionController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SaleController;
+use App\Http\Controllers\SaleReportController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StaffScheduleController;
@@ -32,6 +33,7 @@ Route::prefix('administrador')->name('administrador.')->middleware(['auth', 'rol
     Route::get('operacion_productos_inventario', [InventoryController::class, 'inventories'])->name('operacion_productos_inventario');
     Route::get('contabilidad_ventas', [SaleController::class, 'sales'])->name('contabilidad_ventas');
     Route::get('contabilidad_estadisticas', [StatisticController::class, 'statistics'])->name('contabilidad_estadisticas');
+    Route::get('contabilidad_reportes_ventas', [SaleReportController::class, 'salesReport'])->name('contabilidad_reportes_ventas');
 });
 
 Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function() {
@@ -58,6 +60,7 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function() {
     Route::post('staff', [StaffController::class, 'saveStaff']);
     Route::put('staff', [StaffController::class, 'editStaff']);
     Route::delete('staff/{id}', [StaffController::class, 'deleteStaff']);
+    Route::get('schedules', [StaffScheduleController::class, 'getSchedules']);
     Route::post('schedule', [StaffScheduleController::class, 'saveSchedule']);
     Route::put('schedule', [StaffScheduleController::class, 'editSchedule']);
     Route::get('positions', [PositionController::class, 'getPositions']);
@@ -83,7 +86,7 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function() {
     Route::post('inventory', [InventoryController::class, 'saveInventory']);
     Route::delete('inventory/{id}', [InventoryController::class, 'deleteInventory']);
     Route::get('sales', [SaleController::class, 'getSales']);
-    Route::get('sale', [SaleController::class, 'getSale']);
+    Route::get('sale/{id}', [SaleController::class, 'getSale']);
     Route::post('sale', [SaleController::class, 'saveSale']);
     Route::put('sale', [SaleController::class, 'editSale']);
     Route::get('mostPopularServices', [StatisticController::class, 'mostPopularServices']);
@@ -91,4 +94,6 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function() {
     Route::get('statistics/expenses', [StatisticController::class, 'expenses']);
     Route::get('statistics/appointments', [StatisticController::class, 'appointments']);
     Route::get('statistics/users', [StatisticController::class, 'usersActiveInactice']);
+    Route::get('statistics/all', [StatisticController::class, 'getAllStatistics']);
+    Route::get('reports/sales', [SaleReportController::class, 'sales']);
 });

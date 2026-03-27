@@ -235,9 +235,12 @@ const calculateDiference = (startDate, endDate) => {
         <el-col :span="24" class="table-wrapper">
             <el-table :data="sales" stripe empty-text="Ningún dato disponible en esta tabla" header-cell-class-name="text-dark bold">
                 <el-table-column prop="id" label="#" width="70" align="center" />
-                <el-table-column prop="appointment.customer.name">
+                <el-table-column>
                     <template #header>
                         <el-input v-model="search.customer" placeholder="Cliente" @input="getSales" clearable />
+                    </template>
+                    <template #default="{row}">
+                        {{ row.appointment_id ? row.appointment.customer.name : row.customer.name }}
                     </template>
                 </el-table-column>
                 <el-table-column prop="payment_method.name">

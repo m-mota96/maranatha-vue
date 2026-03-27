@@ -57,7 +57,7 @@ class CustomerController extends Controller {
 
     public function saveCustomer(Request $request) {
         try {
-            Customer::create([
+            $customer = Customer::create([
                 'name'         => $request->name,
                 'birthdate'    => $request->birthdate,
                 'email'        => $request->email,
@@ -67,7 +67,7 @@ class CustomerController extends Controller {
                 'address'      => $request->address,
                 'created_by'   => auth()->user()->id
             ]);
-            return Response::response('El cliente se guardo correctamente.');
+            return Response::response('El cliente se guardo correctamente.', $customer);
         } catch (\Throwable $th) {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
         }

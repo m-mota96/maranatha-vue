@@ -5,14 +5,16 @@ import { showNotification } from '@/notification';
 
 const dialogVisible = ref(false);
 const sale          = ref({});
+const services      = ref([]);
 
 const showModal = async (id) => {
-    const response = await apiClient('admin/sale', 'GET', {id});
+    const response = await apiClient(`admin/sale/${id}`, 'GET');
     if (response.error) {
         showNotification(response.msj, '¡Error!', 'error');
         return
     }
-    sale.value = response.data;
+    sale.value     = response.data;
+    services.value = response.data.appointment_id ? response.data.appointment.services : response.data.services;
     dialogVisible.value = true;
 }
 
@@ -45,18 +47,18 @@ defineExpose({
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="s in sale.appointment.services" :key="s.id">
+                <tr v-for="(s, i) in services" :key="i">
                     <td>
-                        {{ s.name }}
+                        {{ s.name || s.service.name }} ({{ s.time || s.service.time }} min.)
                     </td>
                     <td class="text-center">
-                        {{ formatCurrency(s.pivot.price) }}
+                        {{ formatCurrency(s.pivot?.price || s.price) }}
                     </td>
                     <td class="text-center">
                         1
                     </td>
                     <td class="text-center">
-                        {{ formatCurrency(s.pivot.price) }}
+                        {{ formatCurrency(s.pivot?.price || s.price) }}
                     </td>
                 </tr>
                 <tr v-for="i in sale.inventories" :key="i.id">

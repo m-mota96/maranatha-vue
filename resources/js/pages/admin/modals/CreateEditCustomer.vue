@@ -11,6 +11,8 @@ const { getParentCustomers } = defineProps({
     }
 });
 
+const emit = defineEmits(['update-customerId', 'update-customerName']);
+
 const title         = ref('');
 const button        = ref('');
 const dialogVisible = ref(false);
@@ -67,6 +69,8 @@ const saveCustomer = async () => {
             return
         }
         dialogVisible.value = false;
+        emit('update-customerId', response.data.id);
+        emit('update-customerName', response.data.name);
         if (getParentCustomers) {
             getParentCustomers();
         }

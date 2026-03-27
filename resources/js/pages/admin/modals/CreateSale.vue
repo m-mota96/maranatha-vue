@@ -4,6 +4,7 @@ import { showNotification } from '@/notification';
 import { ref, defineExpose, computed } from 'vue';
 import { format as formatDates } from 'date-fns';
 import UploadImages from './UploadImages.vue';
+import CreateEditCustomer from './CreateEditCustomer.vue';
 
 const { paymentMethods, getParentAppointments } = defineProps({
     paymentMethods: {
@@ -16,17 +17,20 @@ const { paymentMethods, getParentAppointments } = defineProps({
     }
 });
 
-const uploadImagesRef     = ref(null);
-const dialogVisible       = ref(false);
-const appointmentId       = ref(null);
-const allServices         = ref([]);
-const servicesAndProducts = ref([]);
-const staff               = ref([]);
-const currentHour         = ref('');
-const loading             = ref(false);
-const disabledCash        = ref(false);
-const information         = ref({
+const createEditCustomerRef = ref(null);
+const uploadImagesRef       = ref(null);
+const dialogVisible         = ref(false);
+const appointmentId         = ref(null);
+const allServices           = ref([]);
+const servicesAndProducts   = ref([]);
+const staff                 = ref([]);
+const currentHour           = ref('');
+const loading               = ref(false);
+const disabledCash          = ref(false);
+const information           = ref({
     appointment_id: null,
+    customer_name: '',
+    customer_id: '',
     subtotal: 0,
     total: 0,
     type_discount: 'amount',
@@ -89,7 +93,7 @@ const validate = () => {
                     errors.value.service_id[i] = true;
                     valid                      = false;
                 }
-                if (sp.type === 'Servicio' && !sp.staff_id ) {
+                if (sp.type === 'Servicio' && (!sp.staff_id && sp.require_staff)) {
                     errors.value.staff_id[i] = true;
                     valid                    = false;
                 }
@@ -125,9 +129,11 @@ const showModal = async (_appointmentId) => {
     resetForm();
     getServices();
     getStaff();
-    appointmentId.value              = _appointmentId;
-    information.value.appointment_id = _appointmentId;
-    await getAppointment(_appointmentId);
+    if (_appointmentId) {
+        appointmentId.value              = _appointmentId;
+        information.value.appointment_id = _appointmentId;
+        await getAppointment(_appointmentId);
+    }
     dialogVisible.value = true;
 };
 
@@ -184,6 +190,8 @@ const resetForm = () => {
     appointmentId.value              = null;
     servicesAndProducts.value        = [];
     information.value.appointment_id = null;
+    information.value.customer_name  = '';
+    information.value.customer_id    = '';
     information.value.subtotal       = 0;
     information.value.total          = 0;
     information.value.type_discount  = 'amount';
@@ -336,9 +344,7 @@ const querySearch = async (queryString, cb) => {
     .filter(createFilter(queryString))
     .map(product => ({
         ...product,
-        value: `
-            ${product.name} ${product.content ? product.content : ''} ${product.abreviation ? product.abreviation : ''} ${product.brand ? '('+product.brand+')' : ''}
-        `
+        value: `${product.name}${product.content ? ' '+product.content : ''}${product.abreviation ? ' '+product.abreviation : ''}${product.brand ? ' ('+product.brand+')' : ''}`
     }));
 
     cb(results);
@@ -359,10 +365,38 @@ const handleSelect = (_product, id)=> {
     calculateTotal();
 };
 
+const newCustomer = (data = null) => {
+    createEditCustomerRef.value?.showModal(data);
+};
+
+const querySearchAsync = async (queryString, cb) => {
+    if (!queryString) {
+        cb([])
+        return
+    }
+
+    const response = await apiClient('admin/customer', 'GET', {customer: information.value.customer_name});
+    if (response.error) {
+        showNotification(response.msj, '¡Error!', 'error', 6000);
+        cb([]);
+        return
+    }
+
+    const results = response.data.map(item => ({
+        value: item.name,
+        id: item.id
+    }));
+    cb(results);
+};
+
+const handleSelectCustomer = (item) => {
+    information.value.customer_id = item.id;
+};
+
 const closeModal = () => {
     dialogVisible.value = false;
     resetForm();
-}
+};
 
 defineExpose({
     showModal
@@ -376,9 +410,52 @@ defineExpose({
         width="95%"
         style="margin-top: 1% !important;"
     >
-        <el-row :gutter="30" class="mb-4">
+        <el-row :gutter="30" class="mb-4 mt-3">
             <el-col :span="24" class="mb-2">
-                <h4 class="text-black text-center">Servicios y/o Productos</h4>
+                <el-row :gutter="30">
+                    <el-col :span="8">
+                        <h4
+                            v-if="appointmentId"
+                            class="text-black"
+                        >
+                            Cliente: <b class="text-blue-500">{{ servicesAndProducts[0].appointment.customer.name }}</b>
+                        </h4>
+                        <el-form-item v-if="!appointmentId">
+                            <template #label>
+                                <h4 class="text-black">Cliente</h4>
+                            </template>
+                            <el-autocomplete
+                                class="el-form-item"
+                                :class="{'is-error': errors.customer}"
+                                v-model="information.customer_name"
+                                :fetch-suggestions="querySearchAsync"
+                                placeholder="Escribe para buscar un cliente"
+                                @select="handleSelectCustomer"
+                                :trigger-on-focus="false"
+                                :debounce="300"
+                                clearable
+                            >
+                                <template #append>
+                                    <el-tooltip
+                                        placement="top"
+                                        content="Nuevo cliente"
+                                        effect="customized"
+                                    >
+                                        <el-button class="!bg-green-500 !text-white" @click="newCustomer()">
+                                            <font-awesome-icon :icon="['fas', 'user-plus']" />
+                                        </el-button>
+                                    </el-tooltip>
+                                </template>
+                            </el-autocomplete>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="8">
+                        <h4 class="text-black text-center">Servicios y/o Productos</h4>
+                    </el-col>
+                    <el-col :span="8">
+
+                    </el-col>
+                </el-row>
                 <table class="my-table w-100">
                     <thead>
                         <tr>
@@ -399,7 +476,14 @@ defineExpose({
                             </th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody v-if="!servicesAndProducts.length">
+                        <tr>
+                            <td colspan="9" class="text-center">
+                                Ningún dato disponible en esta tabla
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tbody v-if="servicesAndProducts.length">
                         <tr v-for="(s, i) in filterRecords" :key="i">
                             <td>
                                 <span v-if="!s.newRecord">{{ s.type }}</span>
@@ -606,6 +690,11 @@ defineExpose({
             </div>
         </template>
     </el-dialog>
+    <CreateEditCustomer
+        ref="createEditCustomerRef"
+        @update-customerName="information.customer_name = $event"
+        @update-customerId="information.customer_id = $event"
+    />
 </template>
 
 <style scoped>
@@ -628,4 +717,7 @@ defineExpose({
     padding-top: 5px;
     padding-bottom: 5px;
 }
+/* .el-autocomplete :deep(.el-input-group__append) {
+    background-color: blue;
+} */
 </style>

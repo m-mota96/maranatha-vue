@@ -30,37 +30,12 @@ class StatisticController extends Controller {
 
     public function mostPopularServices(Request $request) { // Obtiene los servicios mas vendidos por mes, año y día
         try {
-            $query = AppointmentServiceStaff::with(['service:id,name,color,time'])
-            ->select('service_id')
-            ->selectRaw('COUNT(*) AS total')
-            ->whereHas('service', function($q) {
-                $q->where('require_staff', true);
-            })->whereHas('appointment', function($q) {
-                $q->whereIn('appointment_status_id', [4, 5]); // Confirmada o Finalizada
-            });
-
-            if (!empty($request->year)) {
-                $query->whereHas('appointment', function ($q) use($request) {
-                    $q->whereYear('date', $request->year);
-                });
-            }
-
-            if (!empty($request->month)) {
-                $query->whereHas('appointment', function ($q) use($request) {
-                    $q->whereMonth('date', $request->month);
-                });
-            }
-
-            if (!empty($request->day)) {
-                $query->whereHas('appointment', function ($q) use($request) {
-                    $q->whereDay('date', $request->day);
-                });
-            }
-
-            $services = $query->groupBy('service_id')
-            ->orderByDesc('total')
-            ->limit($request->limit)
-            ->get();
+            $services = self::getPopularServicesData(
+                $request->year, 
+                $request->month, 
+                $request->day, 
+                $request->limit ?? 10
+            );
             return Response::response(null, $services);
         } catch (\Throwable $th) {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
@@ -128,7 +103,7 @@ class StatisticController extends Controller {
 
             for($date = $start_date; $date->lte($end_date); $date->addDay()) {
                 $count = Appointment::where('date', $date->format('Y-m-d'))->whereIn('appointment_status_id', [4, 5])->count();
-                $arrayAppointments[$date->format('Y-m-d')] = rand(20, 50);
+                $arrayAppointments[$date->format('Y-m-d')] = $count;
             }
 
             return Response::response(null, [ 'perMonth' => $arrayAppointments, 'total' => $appointments]);
@@ -161,5 +136,110 @@ class StatisticController extends Controller {
         } catch (\Throwable $th) {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
         }
+    }
+
+    public function getAllStatistics(Request $request) {
+        try {
+            $salesCash = Sale::selectRaw('IF(SUM(cash) IS NULL, 0, SUM(cash)) AS total')
+            ->whereIn('payment_method_id', [1, 2]) // [Efectivo, Efectivo y Tarjeta]
+            ->where('status_sale_id', 1)
+            ->whereDate('created_at', date('Y-m-d'))
+            ->first();
+            $salesCard = Sale::selectRaw('IF(SUM(card) IS NULL, 0, SUM(card)) AS total')
+            ->whereIn('payment_method_id', [2, 3]) // [Efectivo y Tarjeta, Tarjeta]
+            ->where('status_sale_id', 1)
+            ->whereDate('created_at', date('Y-m-d'))
+            ->first();
+            $salesTransfer = Sale::selectRaw('IF(SUM(card) IS NULL, 0, SUM(card)) AS total')
+            ->where('payment_method_id', 4) // [Transferencia]
+            ->where('status_sale_id', 1)
+            ->whereDate('created_at', date('Y-m-d'))
+            ->first();
+            $services = self::getPopularServicesData(date('Y'), date('m'), date('d'));
+
+            $start_date            = Carbon::parse($request->year.'-'.$request->month.'-01');
+            $month                 = $request->month;
+            $year                  = $request->year;
+            $end_day               = date("Y-m-t", mktime(0, 0, 0, $month, 1, $year));
+            $end_date              = Carbon::parse($end_day);
+            $arraySales            = [];
+            $arraySalesYear        = [];
+            $arrayExpenses         = [];
+            $arrayExpensesYear     = [];
+            $totalSalesForMonth    = 0;
+            $totalExpensesForMonth = 0;
+            $totalSalesForYear     = 0;
+            $totalExpensesForYear  = 0;
+
+            for($date = $start_date; $date->lte($end_date); $date->addDay()) {
+                $sales = Sale::selectRaw('IF(SUM(total) IS NOT NULL, SUM(total), 0) AS total')
+                ->whereDate('created_at', '=', $date->format('Y-m-d'))
+                ->where('status_sale_id', 1) // Activa
+                ->first();
+                $arraySales[intval($date->format('d'))] = floatval($sales->total);
+                $totalSalesForMonth = $totalSalesForMonth + floatval($sales->total);
+                $expenses = Inventory::selectRaw('IF(SUM(product_cost) IS NOT NULL, SUM(product_cost), 0) AS total')
+                ->where('type', 'input') // Ingreso
+                ->where('reference_id', 1) // Abastecimiento de producto
+                ->whereDate('created_at', '=', $date->format('Y-m-d'))
+                ->first();
+                $arrayExpenses[intval($date->format('d'))] = floatval($expenses->total);
+                $totalExpensesForMonth = $totalExpensesForMonth + floatval($expenses->total);
+            }
+
+            $months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+            for ($i = 1; $i < 13; $i++) { 
+                $sales = Sale::selectRaw('IF(SUM(total) IS NOT NULL, SUM(total), 0) AS total')
+                ->whereYear('created_at', $request->currentYear)
+                ->whereMonth('created_at', $i)
+                ->where('status_sale_id', 1) // Activa
+                ->first();
+                $arraySalesYear[$months[$i - 1]] = floatval($sales->total);
+                $totalSalesForYear = $totalSalesForYear + floatval($sales->total);
+                $expenses = Inventory::selectRaw('IF(SUM(product_cost) IS NOT NULL, SUM(product_cost), 0) AS total')
+                ->where('type', 'input') // Ingreso
+                ->where('reference_id', 1) // Abastecimiento de producto
+                ->whereYear('created_at', $request->currentYear)
+                ->whereMonth('created_at', $i)
+                ->first();
+                $arrayExpensesYear[$months[$i - 1]] = floatval($expenses->total);
+                $totalExpensesForYear = $totalExpensesForYear + floatval($expenses->total);
+            }
+
+            return Response::response(null, [
+                'salesCash'             => floatval($salesCash->total),
+                'salesCard'             => floatval($salesCard->total),
+                'salesTransfer'         => floatval($salesTransfer->total),
+                'servicesMostPopular'   => $services,
+                'salesForMonth'         => $arraySales,
+                'expensesForMonth'      => $arrayExpenses,
+                'totalSalesForMonth'    => $totalSalesForMonth,
+                'totalExpensesForMonth' => $totalExpensesForMonth,
+                'salesForYear'          => $arraySalesYear,
+                'expensesForYear'       => $arrayExpensesYear,
+                'totalSalesForYear'     => $totalSalesForYear,
+                'totalExpensesForYear'  => $totalExpensesForYear
+            ]);
+        } catch (\Throwable $th) {
+            return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
+        }
+    }
+
+    private function getPopularServicesData($year = null, $month = null, $day = null, $limit = 10) {
+        return AppointmentServiceStaff::with(['service:id,name,color,time'])
+        ->select('service_id')
+        ->selectRaw('COUNT(*) AS total')
+        ->whereHas('service', fn($q) => $q->where('require_staff', true))
+        ->whereHas('appointment', function($q) use ($year, $month, $day) {
+            $q->whereIn('appointment_status_id', [4, 5]); // [Confirmada, Finalizada]
+            if ($year) $q->whereYear('date', $year);
+            if ($month) $q->whereMonth('date', $month);
+            if ($day) $q->whereDay('date', $day);
+        })
+        ->groupBy('service_id')
+        ->orderByDesc('total')
+        ->limit($limit)
+        ->get();
     }
 }

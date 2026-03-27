@@ -411,7 +411,7 @@ const handleViewportChange = (newViewport) => {
 };
 
 const roundToStep = (date, stepMinutes = 15) => {
-    const hours = date.getHours();
+    const hours   = date.getHours();
     const minutes = date.getMinutes();
     // redondeo al múltiplo de step
     const roundedMinutes = Math.ceil(minutes / stepMinutes) * stepMinutes;
@@ -619,7 +619,7 @@ defineExpose({
                     <table class="table table-striped mt-1 w-100">
                         <tbody>
                             <tr v-for="(s, j) in form.services[i - 1]" :key="s.id">
-                                <td class="p-0" style="width: 80%;">
+                                <td class="p-0" style="width: 70%;">
                                     <el-checkbox
                                         class="bold text-dark mt-2"
                                         style="height: auto; white-space: normal;"
@@ -633,7 +633,7 @@ defineExpose({
                                         </span>
                                     </el-checkbox>
                                 </td>
-                                <td class="p-o text-center" style="width: 20%;">
+                                <td class="text-right" style="width: 30%;">
                                     <span v-if="s.active">
                                         <font-awesome-icon class="my-btn me-2" :icon="['fas', 'minus']" @click="moreMinus(-1, (i - 1), j, s)" />
                                         <span class="bold no-select">{{ s.quantity }}</span>
@@ -749,7 +749,11 @@ defineExpose({
             </div>
         </template>
     </el-dialog>
-    <CreateEditCustomer ref="createEditCustomerRef" />
+    <CreateEditCustomer
+        ref="createEditCustomerRef"
+        @update-customerName="form.customer_id = $event"
+        @update-customerId="form.customer = $event"
+    />
 </template>
 
 <style>

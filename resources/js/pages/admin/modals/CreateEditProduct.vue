@@ -22,14 +22,16 @@ const product       = ref({
     discounted_price: 0,
     lote: '',
     expiration_date: '',
-    description: ''
+    description: '',
+    stock: ''
 });
 
 const errors = ref({
     name: false,
     barcode: false,
     price: false,
-    type_sale: false
+    type_sale: false,
+    stock: false
 });
 
 const showModal = (_product) => {
@@ -46,6 +48,7 @@ const showModal = (_product) => {
     product.value.price            = 0;
     product.value.discounted_price = 0;
     product.value.description      = '';
+    product.value.stock            = '';
     if (_product) {
         title.value                    = 'Editar producto';
         button.value                   = 'Guardar cambios';
@@ -59,6 +62,7 @@ const showModal = (_product) => {
         product.value.price            = parseFloat(_product.price);
         product.value.discounted_price = parseFloat(_product.discounted_price);
         product.value.description      = _product.description;
+        product.value.stock            = _product.stock;
     }
     dialogVisible.value = true;
 };
@@ -68,6 +72,7 @@ const resetErrors = () => {
     errors.value.barcode   = false;
     errors.value.price     = false;
     errors.value.type_sale = false;
+    errors.value.stock     = false;
 };
 
 const validate = () => {
@@ -88,6 +93,13 @@ const validate = () => {
     if (!product.value.type_sale) {
         errors.value.type_sale = true;
         valid                  = false;
+    }
+    if (product.value.stock) {
+        const regexNumber = /^[1-9]\d*$/;
+        if (!regexNumber.test(product.value.stock)) {
+            errors.value.stock = true;
+            valid              = false;
+        }
     }
     return valid;
 };
@@ -186,6 +198,21 @@ defineExpose({
                         </el-select>
                     </template>
                 </el-input>
+            </el-col>
+            <el-col :span="12" class="mb-3">
+                <label for="stock" class="bold">
+                    Stock mínimo 
+                    <el-tooltip
+                        class="box-item"
+                        effect="customized"
+                        content="Si completas este campo, el sistema te notificará cuando las existencias bajen de la cantidad ingresada."
+                        placement="right"
+                    >
+                        <font-awesome-icon class="text-purple-500 text-base" :icon="['fas', 'question-circle']" />
+                    </el-tooltip>
+                </label>
+                <el-input v-model="product.stock" class="el-form-item" :class="{'is-error': errors.stock}" id="stock" clearable />
+                <span class="text-danger fs-small" v-if="errors.stock">El valor debe ser un número entero.</span>
             </el-col>
             <el-col :span="12" class="mb-3">
                 <label for="brand" class="bold">Marca</label>

@@ -101,7 +101,8 @@ class AppointmentController extends Controller {
     public function getAppointment($id) {
         try {
             $services = AppointmentServiceStaff::with([
-                'appointment:id,date',
+                'appointment:id,customer_id,date',
+                'appointment.customer:id,name',
                 'service:id,name,time',
                 'staff:id,name,first_name,last_name'
             ])->where('appointment_id', $id)

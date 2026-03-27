@@ -85,8 +85,8 @@ const openModal = (data = null) => {
     createEditStaffRef.value?.showModal(data);
 };
 
-const openModalSchedule = (id, name, info_schedule) => {
-    staffSchedulesRef.value?.showModal(id, name, info_schedule);
+const openModalSchedule = (id, name) => {
+    staffSchedulesRef.value?.showModal(id, name);
 };
 
 const resetFilters = () => {

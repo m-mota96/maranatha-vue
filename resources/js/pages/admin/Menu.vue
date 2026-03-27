@@ -28,15 +28,15 @@ const formattedModules = computed(() =>
     <el-row class="ps-2 pe-2">
         <el-menu class="el-menu-demo ms-4 me-3 mt-2" mode="horizontal">
             <el-menu-item :class="{'active': dad == 'Inicio'}" index="1">
-                <a :href="route(`administrador.inicio`)" class="w-100 align-items">
+                <Link :href="route(`administrador.inicio`)" class="w-100 align-items">
                     <font-awesome-icon :icon="['fas', 'house-chimney']" />&nbsp;Inicio
-                </a>
+                </Link>
             </el-menu-item>
             <template v-for="(m, i) in formattedModules" :key="i">
                 <el-menu-item :index="(i + 2).toString()" style="height: 100%;" v-if="!m.submodules">
-                    <a :href="route(`administrador.${m.target}`)" class="w-100">
+                    <Link :href="route(`administrador.${m.target}`)" class="w-100">
                         <font-awesome-icon :icon="[m.icon[0], m.icon[1]]" />&nbsp;{{ m.name }}
-                    </a>
+                    </Link>
                 </el-menu-item>
                 <el-sub-menu :index="(i + 2).toString()" :class="{'active': dad == m.name}" style="height: 100%;" v-if="m.submodules">
                     <template #title>
@@ -46,18 +46,19 @@ const formattedModules = computed(() =>
                     </template>
                     <template v-for="(s, j) in m.submodules" :key="j">
                         <el-menu-item :index="`${(i + 2)}-${(j + 1)}`" v-if="!s.submodules.length" style="color: black !important;">
-                            <a :href="route(`administrador.${s.target}`)" class="w-100">{{ s.name }}</a>
+                            <Link :href="route(`administrador.${s.target}`)" class="w-100">{{ s.name }}</Link>
                         </el-menu-item>
                         <el-sub-menu :index="`${i + 2}-${j + 1}`" v-if="s.submodules.length">
                             <template #title><span style="color: black !important;">{{ s.name }}</span></template>
                             <el-menu-item v-for="(ss, k) in s.submodules" :key="k" :index="`${(i + 2)}-${(j + 1)}-${k + 1}`" style="color: black !important;">
-                                <a :href="route(`administrador.${ss.target}`)" class="w-100">{{ ss.name }}</a>
+                                <Link :href="route(`administrador.${ss.target}`)" class="w-100">{{ ss.name }}</Link>
                             </el-menu-item>
                         </el-sub-menu>
                     </template>
                 </el-sub-menu>
             </template>
             <el-menu-item class="none-item-one pb-2" index="998">
+                <font-awesome-icon class="text-xl me-4 mt-1 pointer" :icon="['fas', 'bell']" />
                 <h5 class="mt-1" style="text-transform: capitalize !important; cursor: unset !important;">
                     <font-awesome-icon :icon="['fas', 'user-shield']" /> {{ user.name }}
                 </h5>

@@ -31,7 +31,7 @@ class ProductController extends Controller {
             $search     = $request->search;
             $order      = $request->order;
 
-            $allowedColumns = ['created_at', 'name', 'price', 'discounted_price'];
+            $allowedColumns = ['created_at', 'available', 'name', 'price', 'discounted_price'];
 
             $orderBy = in_array($order['orderBy'] ?? '', $allowedColumns)
                 ? $order['orderBy']
@@ -39,26 +39,17 @@ class ProductController extends Controller {
 
             $orderDir = strtolower($order['order'] ?? '') === 'asc' ? 'asc' : 'desc';
 
-            $query = Product::
-                addSelect(['inputs' => Inventory::selectRaw('IF(SUM(quantity) IS NULL, 0, SUM(quantity)) as quantity')
-                ->whereColumn('product_id', 'products.id')
-                ->where('type', 'input')
-                ->groupBy('product_id')
-            ])
-            ->addSelect(['outputs' => Inventory::selectRaw('IF(SUM(quantity) IS NULL, 0, SUM(quantity)) as quantity')
-                ->whereColumn('product_id', 'products.id')
-                ->where('type', 'output')
-                ->where(function ($query) {
-                    $query->where('reference_id', '!=', 3)
-                    ->orWhere(function ($q) {
-                        $q->where('reference_id', 3)
-                        ->whereHas('sale', function ($sale) {
-                            $sale->where('status_sale_id', 1); // Activa
-                        });
-                    });
-                })
-            ->groupBy('product_id')
-        ]);
+            $query = Product::select('*')
+            ->selectRaw('
+                (SELECT IFNULL(SUM(quantity), 0) FROM inventories WHERE product_id = products.id AND type = "input") - 
+                (SELECT IFNULL(SUM(quantity), 0) FROM inventories 
+                WHERE product_id = products.id 
+                AND type = "output" 
+                AND (reference_id != 3 OR (reference_id = 3 AND EXISTS (
+                    SELECT 1 FROM sales WHERE sales.id = inventories.sale_id AND status_sale_id = 1
+                )))
+                ) as available
+            ');
             
             if (!empty($search['name'])) $query->whereLike('name', '%'.$search['name'].'%');
 
@@ -105,6 +96,7 @@ class ProductController extends Controller {
                 'content'          => $request->content,
                 'abreviation'      => $request->abreviation,
                 'description'      => $request->description,
+                'stock'            => $request->stock,
                 'created_by'       => auth()->user()->id,
             ]);
             return Response::response('El producto se guardo correctamente.');
@@ -130,6 +122,7 @@ class ProductController extends Controller {
             $product->content          = $request->content;
             $product->abreviation      = $request->abreviation;
             $product->description      = $request->description;
+            $product->stock            = $request->stock;
             if ($request->status === true || $request->status === false) {
                 $product->status = $request->status;
                 $txt             = $request->status ? 'activo' : 'desactivo';

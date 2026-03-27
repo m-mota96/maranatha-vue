@@ -21,6 +21,7 @@ class Product extends Model
         'content',
         'abreviation',
         'description',
+        'stock',
         'status',
         'created_by',
         'updated_by',

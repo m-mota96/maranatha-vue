@@ -38,7 +38,7 @@ class StaffController extends Controller {
             $search     = $request->search;
             $order      = $request->order;
 
-            $query = Staff::with(['position', 'schedules', 'services']);
+            $query = Staff::with(['position', 'services']);
 
             if ($search['position_id']) $query->where('position_id', $search['position_id']);
             
@@ -168,7 +168,7 @@ class StaffController extends Controller {
 
     public function searchStaff(Request $request) {
         try {
-            $weekDay  = date("w", strtotime($request->date)) + 1;
+            $weekDay  = date("w", strtotime($request->date));
             $datetime = \DateTime::createFromFormat('h:i A', $request->horary);
             $horary   = $datetime->format('H:i');
             $staff    = Staff::with([

@@ -12,6 +12,7 @@ class Sale extends Model
         'status_sale_id',
         'payment_method_id',
         'appointment_id',
+        'customer_id',
         'cash',
         'card',
         'subtotal',
@@ -34,6 +35,10 @@ class Sale extends Model
 
     public function appointment() {
         return $this->belongsTo(Appointment::class);
+    }
+
+    public function customer() {
+        return $this->belongsTo(Customer::class);
     }
 
     public function services() {

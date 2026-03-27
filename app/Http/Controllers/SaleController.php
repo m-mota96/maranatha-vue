@@ -49,18 +49,19 @@ class SaleController extends Controller {
             $query = Sale::with([
                 'appointment:id,customer_id',
                 'appointment.customer:id,name',
-                'appointment.services:id,name,time',
                 'statusSale',
                 'paymentMethod:id,name',
-                'services',
                 'createdBy:id,name',
-                'updatedBy:id,name'
+                'updatedBy:id,name',
+                'customer:id,name'
             ]);
 
             if (!empty($search['dates'])) $query->whereBetween('created_at', [$search['dates'][0], $search['dates'][1]]);
 
             if (!empty($search['customer'])) {
                 $query->whereHas('appointment.customer', function($q) use($search) {
+                    $q->whereLike('name', '%'.$search['customer'].'%');
+                })->orWhereHas('customer', function($q) use($search) {
                     $q->whereLike('name', '%'.$search['customer'].'%');
                 });
             }
@@ -92,14 +93,16 @@ class SaleController extends Controller {
         }
     }
 
-    public function getSale(Request $request) {
+    public function getSale($id) {
         try {
             $sale = Sale::with([
                 'appointment:id',
-                'appointment.services:id,name',
+                'appointment.services:id,name,time',
                 'inventories:id,sale_id,product_id,price,quantity',
-                'inventories.product:id,name,content,abreviation,brand,type_sale'
-            ])->first();
+                'inventories.product:id,name,content,abreviation,brand,type_sale',
+                'services:id,sale_id,service_id,price',
+                'services.service:id,name,time'
+            ])->find($id);
             return Response::response(null, $sale);
         } catch (\Throwable $th) {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', $th->getMessage(), true, 500);
@@ -133,9 +136,9 @@ class SaleController extends Controller {
                     ($sale->subtotal * ($sale->discount / 100)) // Si es en porcentaje se hace el cálculo
                 ) 
                 :
-                null;
+                0;
             
-            $total      = $discount ? $sale->subtotal - $discount : $sale->subtotal;
+            $total      = $sale->subtotal - $discount;
             $amountCash = $sale->total;
             $amountCard = $sale->total;
             switch ($sale->payment_method) {
@@ -160,19 +163,20 @@ class SaleController extends Controller {
                 'status_sale_id' => 1, // Activa
                 'payment_method_id' => $sale->payment_method,
                 'appointment_id'    => !empty($sale->appointment_id) ? $sale->appointment_id : null,
+                'customer_id'       => !empty($sale->customer_id) ? $sale->customer_id: null,
                 'cash'              => $amountCash,
                 'card'              => $amountCard,
                 'subtotal'          => $sale->subtotal,
                 'discount'          => $sale->discount ? $sale->discount : null,
                 'type_discount'     => $sale->discount ? $sale->type_discount : null,
                 'total'             => $total,
-                'observations'      => $sale->observations,
+                'observations'      => $sale->observations ? $sale->observations : null,
                 'created_by'        => auth()->user()->id
             ]);
 
             if (sizeof($services) > 0) {
                 // Registra nuevos servicios agregados al crear la venta y elimina los que se agendaron previamente en la cita (si es que eliminaron alguno).
-                self::checkServices($services);
+                self::checkServices($services, $sale->id);
             }
 
             if(sizeof($products) > 0) {
@@ -201,14 +205,14 @@ class SaleController extends Controller {
             $sale->status_sale_id = $request->status;
             $sale->updated_by     = auth()->user()->id;
             $sale->save();
-            Response::response('La venta se canceló correctamente.');
+            return Response::response('La venta se canceló correctamente.');
         } catch (\Throwable $th) {
             DB::rollBack();
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', $th->getMessage(), true, 500);
         }
     }
 
-    private function checkServices($services) {
+    private function checkServices($services, $saleId) {
         foreach ($services as $key => $s) {
             if (!$s->newRecord) { // Si no es un nuevo registro entonces nos indica que estan eliminando uno de los que agendo en la cita
                 $service             = AppointmentServiceStaff::find($s->id);
@@ -217,12 +221,14 @@ class SaleController extends Controller {
                 $service->delete();
             } else { // Si es nuevo registro es porque le realizaron otro distinto durante su estadia y se lo registraron al momento de la venta
                 AppointmentServiceStaff::create([
-                    'appointment_id' => $s->appointment_id,
+                    'appointment_id' => $s->appointment_id ? $s->appointment_id : null,
                     'service_id'     => $s->service_id,
-                    'staff_id'       => $s->staff_id,
+                    'staff_id'       => $s->staff_id ? $s->staff_id : null,
+                    'sale_id'        => !$s->appointment_id ? $saleId : null,
                     'price'          => $s->price,
                     'start_time'     => date("H:i", strtotime($s->start_time)), // Convierto formato 12 Hrs a formato 24 Hrs
                     'end_time'       => date("H:i", strtotime($s->end_time)), // Convierto formato 12 Hrs a formato 24 Hrs
+                    'created_by'     => auth()->user()->id
                 ]);
             }
         }

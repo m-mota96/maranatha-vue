@@ -93,18 +93,36 @@ const formatCurrency = (value) => {
 
 const handleSizeChange = (val) => {
     getProducts();
-}
+};
 const handleCurrentChange = (val) => {
     getProducts();
-}
+};
+
+const tableRowClassName = ({row}) => {
+    const available = row.type_sale === 'pza' ? parseInt(row.available) : parseFloat(row.available);
+    console.log(row.stock, available);
+    if (available <= 0) {
+        return '!bg-red-200';
+    } else if (available <= row.stock) {
+        return '!bg-orange-100';
+    }
+    return '!bg-green-100';
+};
 </script>
 
 <template>
     <Layout :menu="menu" :module="module">
-        <el-col class="mb-2" :span="4" :offset="15">
+        <el-col class="mb-2 ps-2" :span="15">
+            <br>
+            <span class="text-sm text-black"><font-awesome-icon class="text-green-300" :icon="['fas', 'circle']" /> Existencias arriba del stock mínimo.</span>
+            <span class="text-sm text-black"><font-awesome-icon class="text-orange-300 ms-3" :icon="['fas', 'circle']" /> Existencias abajo del stock mínimo.</span>
+            <span class="text-sm text-black"><font-awesome-icon class="text-red-300 ms-3" :icon="['fas', 'circle']" /> No hay existencias.</span>
+        </el-col>
+        <el-col class="mb-2" :span="4">
             <label for="order">Ordenar por</label>
             <el-select v-model="order.orderBy" @change="getProducts" id="order">
                 <el-option :key="0" label="Fecha de creación" value="created_at" />
+                <el-option :key="1" label="Existencias" value="available" />
                 <el-option :key="1" label="Nombre del producto" value="name" />
                 <el-option :key="2" label="Precio" value="price" />
                 <el-option :key="3" label="Precio con descuento" value="discounted_price" />
@@ -129,10 +147,15 @@ const handleCurrentChange = (val) => {
             </el-tooltip>
         </el-col>
         <el-col :span="24" class="table-wrapper">
-            <el-table :data="products" stripe empty-text="Ningún dato disponible en esta tabla" header-cell-class-name="text-dark bold">
-                <el-table-column prop="id" label="#" width="70" align="center" />
-                <el-table-column prop="barcode" label="Código de barras" />
-                <el-table-column>
+            <el-table 
+                :data="products" 
+                empty-text="Ningún dato disponible en esta tabla" 
+                header-cell-class-name="text-dark bold"
+                :row-class-name="tableRowClassName"
+            >
+                <el-table-column prop="id" label="#" class-name="text-dark" width="70" align="center" />
+                <el-table-column prop="barcode" label="Código de barras" class-name="text-dark" />
+                <el-table-column class-name="text-dark">
                     <template #header>
                         <el-input placeholder="Nombre del producto" title="Escribe para buscar" v-model="search.name" @input="getProducts" clearable />
                     </template>
@@ -142,12 +165,12 @@ const handleCurrentChange = (val) => {
                         {{ scope.row.abreviation ? scope.row.abreviation : '' }}
                     </template>
                 </el-table-column>
-                <el-table-column prop="brand">
+                <el-table-column prop="brand" class-name="text-dark">
                     <template #header>
                         <el-input placeholder="Marca" title="Escribe para buscar" v-model="search.brand" @input="getProducts" clearable />
                     </template>
                 </el-table-column>
-                <el-table-column align="center" width="150">
+                <el-table-column class-name="text-dark" align="center" width="150">
                     <template #header>
                         <el-input placeholder="Precio" title="Escribe para buscar" v-model="search.price" @input="getProducts" clearable />
                     </template>
@@ -155,7 +178,7 @@ const handleCurrentChange = (val) => {
                         {{ formatCurrency(scope.row.price) }}
                     </template>
                 </el-table-column>
-                <el-table-column align="center" width="150">
+                <el-table-column class-name="text-dark" align="center" width="150">
                     <template #header>
                         <el-input placeholder="Precio con descuento" title="Escribe para buscar" v-model="search.discounted_price" @input="getProducts" clearable />
                     </template>
@@ -163,17 +186,18 @@ const handleCurrentChange = (val) => {
                         {{ formatCurrency(scope.row.discounted_price) }}
                     </template>
                 </el-table-column>
-                <el-table-column label="Existencias" align="center">
+                <el-table-column prop="stock" label="Stock mínimo" class-name="text-dark" align="center" />
+                <el-table-column label="Existencias" class-name="text-dark" align="center">
                     <template #default="scope">
                         <span v-if="scope.row.type_sale === 'pza'">
-                            {{ parseInt(scope.row.inputs - scope.row.outputs) }}
+                            {{ parseInt(scope.row.available) }}
                         </span>
                         <span v-if="scope.row.type_sale === 'kg'">
-                            {{ scope.row.inputs - scope.row.outputs }}
+                            {{ scope.row.available }}
                         </span>
                     </template>
                 </el-table-column>
-                <el-table-column prop="description" label="Descripción" />
+                <el-table-column prop="description" label="Descripción" class-name="text-dark" />
                 <el-table-column align="center" width="150">
                     <template #header>
                         <el-select placeholder="Estatus" v-model="search.status" @change="getProducts" clearable>

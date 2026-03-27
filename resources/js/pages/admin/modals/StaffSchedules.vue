@@ -8,24 +8,26 @@ const { getParentStaff } = defineProps({
 });
 
 const dialogVisible   = ref(false);
-const staff_schedules = ref([]);
+const staff_id        = ref('');
 const staff_name      = ref('');
-const method          = ref('PUT');
+const method          = ref('POST');
 const week            = ref([
     'Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'
 ]);
-const schedule = ref([{
-    start_time: '',
-    meal_start_time: '',
-    meal_end_time: '',
-    end_time: ''
-}]);
-const workDay = ref([]);
+const schedule = ref({
+    workDay: [],
+    day: [],
+    schedule: [],
+});
 const errors= ref([]);
 
 const saveSchedule = async () => {
     if (validate()) {
-        const response = await apiClient('admin/schedule', method.value, {schedule: staff_schedules.value});
+        schedule.value.workDay.forEach(s => {
+            const day = week.value.findIndex(w => w === s);
+            schedule.value.day.push(day);
+        });
+        const response = await apiClient('admin/schedule', method.value, {id: staff_id.value, schedule: schedule.value.schedule, days: schedule.value.day});
         if (response.error) {
             showNotification(response.msj, '¡Error!', 'error', 7500);
             return
@@ -37,18 +39,12 @@ const saveSchedule = async () => {
 }
 
 const validate = () => {
-    let valid     = true;
-    let dayActive = false;
-    staff_schedules.value.forEach(s => {
-        if (s.status) {
-            dayActive = true;
-        }
-    });
-    if (!dayActive) {
-        showNotification('Debes marcar al menos 1 día de trabajo.', '¡Error!', 'error', 8000);
+    let valid = true;
+    if (!schedule.value.workDay.length) {
+        showNotification('Debes elegir al menos un día de jornada laboral.', '¡Error!', 'error');
         valid = false;
     } else {
-        if (!areSchedulesValid(staff_schedules.value)) {
+        if (areSchedulesValid(schedule.value.schedule)) {
             showNotification('Algunos horarios no son consecutivos<br>o están incompletos.', '¡Error!', 'error', 8000);
             valid = false;
         }
@@ -56,66 +52,78 @@ const validate = () => {
     return valid;
 }
 
-const showModal = (_id, _staff_name, _info_schedules) => {
-    // console.log(week.value)
+const showModal = async (_id, _staff_name) => {
     resetForm();
-    staff_name.value      = _staff_name;
-    staff_schedules.value = JSON.parse(JSON.stringify(_info_schedules));
-    if (!_info_schedules.length) {
-        method.value = 'POST';
-        for (let i = 0; i < 7; i++) {
-            staff_schedules.value.push({
-                staff_id: _id,
-                day: (i + 1),
-                start_time: '',
-                end_time: '',
-                meal_start_time: '',
-                meal_end_time: '',
-                status: 0,
-            });
-        }
+    staff_id.value   = _id;
+    staff_name.value = _staff_name;
+    const response   = await apiClient('admin/schedules', 'GET', { id: _id });
+    if (response.error) {
+        showNotification(response.msj, '¡Error!', 'error', 7500);
+        return
     }
-    for (let i = 0; i < 7; i++) {
-        errors.value.push(false);
+    if (response.data.length) {
+        method.value = 'PUT';
+        response.data.forEach(s => {
+            schedule.value.workDay.push(week.value[s.day]);
+            schedule.value.schedule.push({
+                day: week.value[s.day],
+                start_time: to12HourFormat(s.start_time),
+                start_break: s.meal_start_time ? to12HourFormat(s.meal_start_time) : '',
+                end_break: s.meal_end_time ? to12HourFormat(s.meal_end_time) : '',
+                end_time: to12HourFormat(s.end_time),
+            });
+        });
     }
     dialogVisible.value = true;
 };
 
-const setDay = () => {
-    console.log(workDay.value);
-};
+const setDay = (checked, day) => {
+    errors.value = [];
+    if (checked) {
+        schedule.value.schedule.push({
+            day,
+            start_time: '',
+            start_break: '',
+            end_break: '',
+            end_time: ''
+        });
+    } else {
+        const index = schedule.value.schedule.findIndex(s => s.day === day);
+        if (index !== -1) {
+            schedule.value.schedule.splice(index, 1);
+        }
+    }
 
-const resetForm = () => {
-    errors.value   = [];
-    method.value   = 'PUT';
-    schedule.value = [{
-        start_time: '',
-        meal_start_time: '',
-        meal_end_time: '',
-        end_time: ''
-    }];
-    staff_schedules.value = [];
-};
+    schedule.value.workDay.sort((a, b) => week.value.indexOf(a) - week.value.indexOf(b));
 
-const setValue = (val, index) => {
-    staff_schedules.value.forEach(s => {
-        s[index] = val;
+    schedule.value.schedule.sort((a, b) => {
+        return week.value.indexOf(a.day) - week.value.indexOf(b.day);
     });
 };
 
+const resetForm = () => {
+    errors.value            = [];
+    method.value            = 'POST';
+    schedule.value.workDay  = [];
+    schedule.value.day      = [];
+    schedule.value.schedule = [];
+};
+
 const areSchedulesValid = (schedules) => {
-    return schedules.every((schedule, index) => {
-        errors.value[index] = false;
-        const { start_time, meal_start_time, meal_end_time, end_time, status } = schedule;
-
-        // Si el día está inactivo, lo ignoramos
-        if (!status) return true;
-
+    let error    = false;
+    errors.value = [];
+    schedules.forEach((schedule, index) => {
+        let isValid       = true;
+        const start_time  = schedule.start_time ? to24HourFormat(schedule.start_time) : null;
+        const start_break = schedule.start_break ? to24HourFormat(schedule.start_break) : null;
+        const end_break   = schedule.end_break ? to24HourFormat(schedule.end_break) : null;
+        const end_time    = schedule.end_time ? to24HourFormat(schedule.end_time) : null;
+        
         // Nos aseguramos que todos los campos estén llenos
-        // if (!start_time || !meal_start_time || !meal_end_time || !end_time) {
+        // if (!start_time || !start_break || !end_break || !end_time) {
         if (!start_time || !end_time) {
-            errors.value[index] = true;
-            return false;
+            // errors.value[index] = true;
+            isValid = false;
         };
 
         // Convertimos a minutos para comparar
@@ -124,31 +132,52 @@ const areSchedulesValid = (schedules) => {
             return h * 60 + m;
         };
 
-        const start     = toMinutes(start_time);
-        const mealStart = meal_start_time ? toMinutes(meal_start_time) : null;
-        const mealEnd   = meal_end_time ? toMinutes(meal_end_time) : null;
-        const end       = toMinutes(end_time);
-        let isValid = true;
+        const start     = start_time ? toMinutes(start_time) : null;
+        const mealStart = start_break ? toMinutes(start_break) : null;
+        const mealEnd   = end_break ? toMinutes(end_break) : null;
+        const end       = end_time ? toMinutes(end_time) : null;
+        
         if (mealStart && mealEnd) {
             isValid = start < mealStart && mealStart < mealEnd && mealEnd < end;
-        } else {
+        } else if (start && end) {
             isValid = start < end;
+        } else {
+            isValid = false;
         }
 
         if (!isValid) {
+            error               = true;
             errors.value[index] = true;
         }
-        return isValid;
     });
+    return error;
 };
 
-const resetSchedule = (val, index) => {
-    if (!val) {
-        staff_schedules.value[index].start_time      = '';
-        staff_schedules.value[index].meal_start_time = '';
-        staff_schedules.value[index].meal_end_time   = '';
-        staff_schedules.value[index].end_time        = '';
-    }
+const to12HourFormat = (horary) => {
+    // Divido la cadena en horas y minutos
+    let [hours, minutes] = horary.split(':');
+
+    // Determino si es AM o PM
+    const suffix = hours >= 12 ? 'PM' : 'AM';
+
+    // Convierto la hora al formato de 12 horas (el resto de 12)
+    // El caso de '00' se maneja convirtiéndolo a 12
+    hours = (hours % 12) || 12;
+
+    // Aseguro que las horas siempre tengan dos dígitos (ej. '05')
+    const horasFormateadas = hours.toString().padStart(2, '0');
+
+    return `${horasFormateadas}:${minutes} ${suffix}`;
+};
+
+const to24HourFormat = (time12h) => {
+    const [time, modifier] = time12h.split(' ');
+    let [hours, minutes] = time.split(':').map(Number);
+
+    if (modifier === 'PM' && hours < 12) hours += 12;
+    if (modifier === 'AM' && hours === 12) hours = 0;
+
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 };
 
 defineExpose({
@@ -164,19 +193,20 @@ defineExpose({
         style="margin-top: 2% !important;"
     >
         <label class="bold">Jornada <span class="text-danger">*</span></label>
-        <el-checkbox-group v-model="workDay">
-            <el-checkbox-button v-for="w in week" :key="w" :value="w" @change="setDay">
+        <el-checkbox-group v-model="schedule.workDay">
+            <el-checkbox-button v-for="w in week" :key="w" :value="w" @change="(val) => setDay(val, w)">
                 {{ w }}
             </el-checkbox-button>
         </el-checkbox-group>
         <label class="bold mt-3">Horario <span class="text-danger">*</span></label>
         <el-row :gutter="20" class="mb-5">
-            <el-col :span="4" v-for="wd in workDay">
+            <el-col :span="4" v-for="(s, i) in schedule.schedule" :key="i">
                 <el-card class="mb-4">
-                    <p class="text-base text-dark text-center">{{ wd }}</p>
+                    <p class="text-base text-dark text-center">{{ schedule.workDay[i] }}</p>
                     <el-divider />
                     <p class="!text-purple-600 mb-0">Entrada <span class="text-danger">*</span></p>
                     <el-time-select
+                        v-model="s.start_time"
                         class="el-form-item w-100"
                         :class="{'is-error': false}"
                         start="08:00"
@@ -188,6 +218,7 @@ defineExpose({
                     />
                     <p class="!text-purple-600 mb-0 mt-3">Salida a comida</p>
                     <el-time-select
+                        v-model="s.start_break"
                         class="el-form-item w-100"
                         :class="{'is-error': false}"
                         start="08:00"
@@ -199,6 +230,7 @@ defineExpose({
                     />
                     <p class="!text-purple-600 mb-0 mt-3">Entrada de comida</p>
                     <el-time-select
+                        v-model="s.end_break"
                         class="el-form-item w-100"
                         :class="{'is-error': false}"
                         start="08:00"
@@ -210,6 +242,7 @@ defineExpose({
                     />
                     <p class="!text-purple-600 mb-0 mt-3">Salida <span class="text-danger">*</span></p>
                     <el-time-select
+                        v-model="s.end_time"
                         class="el-form-item w-100"
                         :class="{'is-error': false}"
                         start="08:00"
@@ -219,163 +252,11 @@ defineExpose({
                         format="hh:mm A"
                         clearable
                     />
+                    <p class="text-danger fs-small text-center mt-3 mb-0" v-if="errors[i] && (!s.start_time || !s.end_time)">Completa entrada y salida.</p>
+                    <p class="text-danger fs-small text-center mt-3 mb-0" v-if="errors[i] && (s.start_time && s.end_time)">Los horarios no son consecutivos.</p>
                 </el-card>
             </el-col>
         </el-row>
-        <!-- <el-table
-            :data="schedule"
-            stripe
-            empty-text="Ningún dato disponible en esta tabla"
-            header-cell-class-name="text-dark bold"
-            row-class-name="text-dark"
-            class="mt-4"
-            v-if="method === 'POST'"
-        >
-            <el-table-column label="" width="150" align="center">
-                <template #default="scope">
-                    -----
-                </template>
-            </el-table-column>
-            <el-table-column label="Hora de entrada">
-                <template #default="scope">
-                    <el-time-picker
-                        class="w-100"
-                        v-model="schedule[scope.$index].start_time"
-                        placeholder="Elige la hora"
-                        :is-show-seconds="false"
-                        format="HH:mm"
-                        value-format="HH:mm"
-                        clearable
-                        @change="(val) => setValue(val, 'start_time')"
-                    />
-                </template>
-            </el-table-column>
-            <el-table-column label="Hora de salida a comer">
-                <template #default="scope">
-                    <el-time-picker
-                        class="w-100"
-                        v-model="schedule[scope.$index].meal_start_time"
-                        placeholder="Elige la hora"
-                        :is-show-seconds="false"
-                        format="HH:mm"
-                        value-format="HH:mm"
-                        clearable
-                        @change="(val) => setValue(val, 'meal_start_time')"
-                    />
-                </template>
-            </el-table-column>
-            <el-table-column label="Hora de entrada de comer">
-                <template #default="scope">
-                    <el-time-picker
-                        class="w-100"
-                        v-model="schedule[scope.$index].meal_end_time"
-                        placeholder="Elige la hora"
-                        :is-show-seconds="false"
-                        format="HH:mm"
-                        value-format="HH:mm"
-                        clearable
-                        @change="(val) => setValue(val, 'meal_end_time')"
-                    />
-                </template>
-            </el-table-column>
-            <el-table-column label="Hora de salida">
-                <template #default="scope">
-                    <el-time-picker
-                        class="w-100"
-                        v-model="schedule[scope.$index].end_time"
-                        placeholder="Elige la hora"
-                        :is-show-seconds="false"
-                        format="HH:mm"
-                        value-format="HH:mm"
-                        clearable
-                        @change="(val) => setValue(val, 'end_time')"
-                    />
-                </template>
-            </el-table-column>
-            <el-table-column align="center" width="150">
-                -----
-            </el-table-column>
-        </el-table>
-        <p class="mt-1 mb-5 text-dark" v-if="method === 'POST'">
-            <b class="text-danger">Nota: </b>
-            Puedes autocompletar los horarios en la tabla de arriba para facilitar el 
-            llenado y si necesitas modificar alguno en específico lo puedes hacer.
-        </p>
-        <el-table
-            :data="staff_schedules"
-            stripe
-            empty-text="Ningún dato disponible en esta tabla"
-            header-cell-class-name="text-dark bold"
-            row-class-name="text-success"
-            class="mb-4"
-        >
-            <el-table-column label="Día de la semana" width="150" align="center">
-                <template #default="scope">
-                    <b>{{ week[(scope.row.day - 1)] }}</b>
-                </template>
-            </el-table-column>
-            <el-table-column label="Hora de entrada">
-                <template #default="scope">
-                    <el-time-picker
-                        class="el-form-item w-100"
-                        :class="{'is-error': errors[scope.$index]}"
-                        v-model="scope.row.start_time"
-                        placeholder="Elige la hora"
-                        :is-show-seconds="false"
-                        format="HH:mm"
-                        value-format="HH:mm"
-                        clearable
-                    />
-                </template>
-            </el-table-column>
-            <el-table-column label="Hora de salida a comer">
-                <template #default="scope">
-                    <el-time-picker
-                        class="el-form-item w-100"
-                        :class="{'is-error': errors[scope.$index]}"
-                        v-model="scope.row.meal_start_time"
-                        placeholder="Elige la hora"
-                        :is-show-seconds="false"
-                        format="HH:mm"
-                        value-format="HH:mm"
-                        clearable
-                    />
-                </template>
-            </el-table-column>
-            <el-table-column label="Hora de entrada de comer">
-                <template #default="scope">
-                    <el-time-picker
-                        class="el-form-item w-100"
-                        :class="{'is-error': errors[scope.$index]}"
-                        v-model="scope.row.meal_end_time"
-                        placeholder="Elige la hora"
-                        :is-show-seconds="false"
-                        format="HH:mm"
-                        value-format="HH:mm"
-                        clearable
-                    />
-                </template>
-            </el-table-column>
-            <el-table-column label="Hora de salida">
-                <template #default="scope">
-                    <el-time-picker
-                        class="el-form-item w-100"
-                        :class="{'is-error': errors[scope.$index]}"
-                        v-model="scope.row.end_time"
-                        placeholder="Elige la hora"
-                        :is-show-seconds="false"
-                        format="HH:mm"
-                        value-format="HH:mm"
-                        clearable
-                    />
-                </template>
-            </el-table-column>
-            <el-table-column label="¿Trabaja este día?" align="center" width="150">
-                <template #default="scope">
-                    <el-checkbox v-model="scope.row.status" :true-value="1" :false-value="0" size="large" @change="(val) => resetSchedule(val, scope.$index)" />
-                </template>
-            </el-table-column>
-        </el-table> -->
         <template #footer>
             <div class="dialog-footer">
                 <el-button @click="dialogVisible = false">Cancelar</el-button>

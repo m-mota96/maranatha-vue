@@ -193,6 +193,24 @@ class ModuleSeeder extends Seeder
             'updated_at' => date('Y-m-d H:i:s'),
         ];
 
+        $modules[20] = [
+            'module_id' => 18,
+            'name' => 'Reportes',
+            'target' => null,
+            'icon' => null,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $modules[21] = [
+            'module_id' => 21,
+            'name' => 'Reporte de ventas',
+            'target' => 'contabilidad_reportes_ventas',
+            'icon' => null,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
         Module::insert($modules);
     }
 }
