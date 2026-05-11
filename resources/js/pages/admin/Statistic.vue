@@ -92,16 +92,16 @@ const createChartForMonth = (sales, expenses)=> {
 
     optionsChartForMonth.value.xAxis.categories = dates;
     optionsChartForMonth.value.series.push({
-        name: 'Ingresos',
-        data: Object.values(sales),
-        colorByPoint: false,
-        color: '#00c951'
-    });
-    optionsChartForMonth.value.series.push({
         name: 'Egresos',
         data: Object.values(expenses),
         colorByPoint: false,
         color: '#ff6900'
+    });
+    optionsChartForMonth.value.series.push({
+        name: 'Ingresos',
+        data: Object.values(sales),
+        colorByPoint: false,
+        color: '#00c951'
     });
 };
 
@@ -110,16 +110,16 @@ const createChartForYear = (sales, expenses) => {
 
     optionsChartForYear.value.xAxis.categories = monthLabels;
     optionsChartForYear.value.series.push({
-        name: 'Ingresos',
-        data: Object.values(sales),
-        colorByPoint: false,
-        color: '#00c951'
-    });
-    optionsChartForYear.value.series.push({
         name: 'Egresos',
         data: Object.values(expenses),
         colorByPoint: false,
         color: '#ff6900'
+    });
+    optionsChartForYear.value.series.push({
+        name: 'Ingresos',
+        data: Object.values(sales),
+        colorByPoint: false,
+        color: '#00c951'
     });
 };
 
@@ -257,7 +257,7 @@ const getDaysInMonth = (month, year)=> {
 .my-card {
     border-width: 5px 1px 1px;
     border-style: solid;
-    border-color: rgb(6, 120, 183);
+    border-color: #ad46ff;
     border-image: initial;
     border-radius: 1rem;
 }

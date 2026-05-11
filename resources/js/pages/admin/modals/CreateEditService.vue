@@ -20,7 +20,8 @@ const service       = ref({
     discounted_price: '',
     time: 15,
     color: '',
-    require_staff: ''
+    require_staff: '',
+    status: ''
 });
 const errors = ref({
     service_type_id: false,
@@ -65,7 +66,7 @@ const showModal = async (_service) => {
         service.value.discounted_price = _service.discounted_price;
         service.value.time             = _service.time;
         service.value.color            = _service.color;
-        service.value.require_staff    = _service.require_staff;
+        service.value.require_staff    = _service.require_staff ? true : false;
     }
     dialogVisible.value = true;
 };

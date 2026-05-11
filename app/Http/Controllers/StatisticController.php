@@ -121,11 +121,23 @@ class StatisticController extends Controller {
             ->whereHas('appointments', function ($q) use($months) {
                 $q->where('date', '>=', now()->subMonths($months));
             })
+            ->orWhereHas('sales', function($q) use($months) {
+                $q->where('created_at', '>=', now()->subMonths($months));
+            })
             ->count();
             
             $inactives = Customer::where('status', 1)
-            ->whereHas('appointments', function ($q) use($months) {
-                $q->where('date', '<', now()->subMonths($months));
+            ->where(function ($query) use ($months) {
+                // No tiene citas recientes
+                $query->whereDoesntHave('appointments', function ($q) use ($months) {
+                    $q->where('date', '>=', now()->subMonths($months));
+                });
+            })
+            ->where(function ($query) use ($months) {
+                // No tiene compras recientes
+                $query->whereDoesntHave('sales', function ($q) use ($months) {
+                    $q->where('created_at', '>=', now()->subMonths($months));
+                });
             })
             ->count();
 

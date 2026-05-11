@@ -87,7 +87,7 @@ class ModuleController extends Controller {
                 'class'       => $request->class,
                 'description' => $request->description
             ]);
-            return Response::response('El módulo se guardo correctamente.');
+            return Response::response('El módulo se guardó correctamente.');
         } catch (\Throwable $th) {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
         }

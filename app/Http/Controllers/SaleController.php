@@ -56,7 +56,7 @@ class SaleController extends Controller {
                 'customer:id,name'
             ]);
 
-            if (!empty($search['dates'])) $query->whereBetween('created_at', [$search['dates'][0], $search['dates'][1]]);
+            if (!empty($search['dates'])) $query->whereBetween('created_at', [$search['dates'][0].' 00:00:00', $search['dates'][1].' 23:59:59']);
 
             if (!empty($search['customer'])) {
                 $query->whereHas('appointment.customer', function($q) use($search) {
@@ -97,11 +97,14 @@ class SaleController extends Controller {
         try {
             $sale = Sale::with([
                 'appointment:id',
-                'appointment.services:id,name,time',
+                'appointment.servicesStaff:appointment_id,staff_id,service_id,price',
+                'appointment.servicesStaff.staff:id,name,first_name,last_name',
+                'appointment.servicesStaff.service:id,name,time',
                 'inventories:id,sale_id,product_id,price,quantity',
                 'inventories.product:id,name,content,abreviation,brand,type_sale',
-                'services:id,sale_id,service_id,price',
-                'services.service:id,name,time'
+                'services:id,sale_id,service_id,staff_id,price',
+                'services.service:id,name,time',
+                'services.staff:id,name,first_name,last_name'
             ])->find($id);
             return Response::response(null, $sale);
         } catch (\Throwable $th) {
@@ -228,6 +231,7 @@ class SaleController extends Controller {
                     'price'          => $s->price,
                     'start_time'     => date("H:i", strtotime($s->start_time)), // Convierto formato 12 Hrs a formato 24 Hrs
                     'end_time'       => date("H:i", strtotime($s->end_time)), // Convierto formato 12 Hrs a formato 24 Hrs
+                    'date'           => date('Y-m-d'),
                     'created_by'     => auth()->user()->id
                 ]);
             }

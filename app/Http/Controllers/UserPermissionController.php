@@ -26,7 +26,7 @@ class UserPermissionController extends Controller {
     public function permissionUser(Request $request) {
         try {
             $permissions = $request->modules;
-            array_shift($permissions);
+            $permissions = array_filter($permissions);
             $permissions = array_values($permissions);
             $modules     = [];
             foreach ($permissions as $key => $p) {

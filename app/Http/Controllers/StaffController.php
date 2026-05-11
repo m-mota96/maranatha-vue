@@ -102,7 +102,7 @@ class StaffController extends Controller {
             }
 
             if ($reqStaff['id'] === null) {
-                $txt   = 'guardo';
+                $txt   = 'guardó';
                 $staff = Staff::create([
                     'position_id'   => $reqStaff['position_id'],
                     'name'          => $reqStaff['name'],

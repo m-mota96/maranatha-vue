@@ -83,6 +83,7 @@ const enableDisableModule = (value, moduleId = null, dadId = null, grandfatherId
 };
 
 const savePermission = async () => {
+    console.log(activeModules.value);
     const response = await apiClient('admin/permissionUser', 'POST', {user_id: userId.value, modules: activeModules.value});
     if (response.error) {
         showNotification(response.msj, '¡Error!', 'error', 7000);

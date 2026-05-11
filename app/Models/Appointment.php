@@ -49,6 +49,10 @@ class Appointment extends Model
         ->orderBy('start_time');
     }
 
+    public function servicesStaff() {
+        return $this->hasMany(AppointmentServiceStaff::class);
+    }
+
     public function staffs() {
         return $this->belongsToMany(Staff::class);
     }

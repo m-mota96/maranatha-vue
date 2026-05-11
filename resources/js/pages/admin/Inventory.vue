@@ -223,6 +223,13 @@ const calculateDiference = (startDate, endDate) => {
                         </el-select>
                     </template>
                 </el-table-column>
+                <el-table-column label="Proveedor">
+                    <template #default="scope">
+                        <span v-if="scope.row.provider">
+                            {{ scope.row.provider.name }}{{ scope.row.provider.seller ? ' - '+scope.row.provider.seller : '' }}
+                        </span>
+                    </template>
+                </el-table-column>
                 <el-table-column label="Cantidad" align="center">
                     <template #default="scope">
                         {{ scope.row.product.type_sale === 'pza' ? parseInt(scope.row.quantity) : scope.row.quantity }}
@@ -251,7 +258,7 @@ const calculateDiference = (startDate, endDate) => {
                 </el-table-column>
                 <el-table-column width="80" align="center">
                     <template #header>
-                        <el-tooltip content="Nuevo producto" effect="customized" placement="top">
+                        <el-tooltip content="Nuevo registro" effect="customized" placement="top">
                             <el-button class="btn-success" @click="openModal()">
                                 <font-awesome-icon :icon="['fas', 'plus']" />
                             </el-button>
@@ -272,13 +279,13 @@ const calculateDiference = (startDate, endDate) => {
                                 confirm-button-type="danger"
                                 cancel-button-type="primary"
                                 :width="200"
-                                title="¿Seguro que deseas eliminar este producto?"
+                                title="¿Seguro que deseas eliminar este registro?"
                                 placement="left"
                                 @confirm="deleteInventory(scope.row.id)"
                             >
                                 <template #reference>
                                     <span>
-                                        <el-tooltip content="Eliminar producto" effect="customized" placement="top">
+                                        <el-tooltip content="Eliminar registro" effect="customized" placement="top">
                                             <el-button class="btn-danger">
                                                 <font-awesome-icon :icon="['fas', 'trash-can']" />
                                             </el-button>

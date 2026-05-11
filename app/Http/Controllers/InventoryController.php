@@ -42,7 +42,8 @@ class InventoryController extends Controller {
 
             $query = Inventory::with([
                 'product:id,name,content,abreviation,brand,type_sale',
-                'reference'
+                'reference',
+                'provider:id,name,seller'
             ])->whereNotIn('reference_id', [3]);
             
             if (!empty($search['product_name'])) {
@@ -69,15 +70,16 @@ class InventoryController extends Controller {
     public function saveInventory(Request $request) {
         try {
             Inventory::create([
-                'product_id' => $request->product_id,
-                'reference_id' => $request->reference_id,
-                'type' => $request->type,
-                'quantity' => $request->quantity,
+                'product_id'      => $request->product_id,
+                'reference_id'    => $request->reference_id,
+                'provider_id'     => ($request->provider_id && $request->provider) ? $request->provider_id : null,
+                'type'            => $request->type,
+                'quantity'        => $request->quantity,
                 'expiration_date' => $request->expiration_date,
-                'batch' => $request->batch,
-                'product_cost' => ($request->reference_id === 1 && $request->type === 'input') ? $request->product_cost : null,
-                'description' => $request->description,
-                'created_by' => auth()->user()->id,
+                'batch'           => $request->batch,
+                'product_cost'    => ($request->reference_id === 1 && $request->type === 'input') ? $request->product_cost : null,
+                'description'     => $request->description,
+                'created_by'      => auth()->user()->id,
             ]);
             return Response::response('El registro de guardó correctamente.');
         } catch (\Throwable $th) {
@@ -87,7 +89,11 @@ class InventoryController extends Controller {
 
     public function deleteInventory($id) {
         try {
-
+            $inventory = Inventory::find($id);
+            $inventory->deleted_by = auth()->user()->id;
+            $inventory->save();
+            $inventory->delete();
+            return Response::response('El registro de eliminó correctamente.');
         } catch (\Throwable $th) {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
         }

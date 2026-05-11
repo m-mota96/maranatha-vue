@@ -99,7 +99,7 @@ class ProductController extends Controller {
                 'stock'            => $request->stock,
                 'created_by'       => auth()->user()->id,
             ]);
-            return Response::response('El producto se guardo correctamente.');
+            return Response::response('El producto se guardó correctamente.');
         } catch (\Throwable $th) {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
         }

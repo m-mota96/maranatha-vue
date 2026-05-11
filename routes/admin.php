@@ -9,8 +9,9 @@ use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\ModulePermissionController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProviderController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SaleController;
-use App\Http\Controllers\SaleReportController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StaffScheduleController;
@@ -28,12 +29,13 @@ Route::prefix('administrador')->name('administrador.')->middleware(['auth', 'rol
     Route::get('organizacion_staff_puestos', [PositionController::class, 'positions'])->name('organizacion_staff_puestos');
     Route::get('operacion_servicios', [ServiceController::class, 'services'])->name('operacion_servicios');
     Route::get('operacion_paquetes', [PackageController::class, 'packages'])->name('operacion_paquetes');
+    Route::get('operacion_proveedores', [ProviderController::class, 'providers'])->name('operacion_proveedores');
     Route::get('clientes_clientes', [CustomerController::class, 'customers'])->name('clientes_clientes');
     Route::get('operacion_productos_productos', [ProductController::class, 'products'])->name('operacion_productos_productos');
     Route::get('operacion_productos_inventario', [InventoryController::class, 'inventories'])->name('operacion_productos_inventario');
     Route::get('contabilidad_ventas', [SaleController::class, 'sales'])->name('contabilidad_ventas');
     Route::get('contabilidad_estadisticas', [StatisticController::class, 'statistics'])->name('contabilidad_estadisticas');
-    Route::get('contabilidad_reportes_ventas', [SaleReportController::class, 'salesReport'])->name('contabilidad_reportes_ventas');
+    Route::get('contabilidad_reportes', [ReportController::class, 'salesReport'])->name('contabilidad_reportes');
 });
 
 Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function() {
@@ -95,5 +97,12 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function() {
     Route::get('statistics/appointments', [StatisticController::class, 'appointments']);
     Route::get('statistics/users', [StatisticController::class, 'usersActiveInactice']);
     Route::get('statistics/all', [StatisticController::class, 'getAllStatistics']);
-    Route::get('reports/sales', [SaleReportController::class, 'sales']);
+    Route::get('reports/sales', [ReportController::class, 'sales']);
+    Route::get('reports/staffCommissions', [ReportController::class, 'staffCommissions']);
+    Route::get('reports/incomeVsExpenses', [ReportController::class, 'incomeVsExpenses']);
+    Route::get('providers', [ProviderController::class, 'getProviders']);
+    Route::get('provider', [ProviderController::class, 'searchProvider']);
+    Route::post('provider', [ProviderController::class, 'saveProvider']);
+    Route::put('provider', [ProviderController::class, 'editProvider']);
+    Route::delete('provider/{id}', [ProviderController::class, 'deleteProvider']);
 });

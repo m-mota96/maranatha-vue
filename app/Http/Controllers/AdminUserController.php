@@ -53,7 +53,7 @@ class AdminUserController extends Controller {
             ]);
 
             $user->assignRole('admin');
-            return Response::response('El usuario se guardo correctamente.');
+            return Response::response('El usuario se guardó correctamente.');
         } catch (\Throwable $th) {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
         }

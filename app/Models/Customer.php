@@ -28,4 +28,8 @@ class Customer extends Model
     public function appointments() {
         return $this->hasMany(Appointment::class);
     }
+
+    public function sales() {
+        return $this->hasMany(Sale::class);
+    }
 }

@@ -34,6 +34,7 @@ class AppointmentController extends Controller {
                     'discounted_price' => $services[$i]['discounted_price'],
                     'start_time'       => $services[$i]['start_time'],
                     'end_time'         => $services[$i]['end_time'],
+                    'date'             => $request->date,
                     'created_by'       => auth()->user()->id,
                     'created_at'       => date('Y-m-d H:i:s'),
                     'updated_at'       => date('Y-m-d H:i:s')

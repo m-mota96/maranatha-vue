@@ -51,7 +51,7 @@ class PositionController extends Controller {
             Position::create([
                 'name' => $request->name,
             ]);
-            return Response::response('El puesto se guardo correctamente.');
+            return Response::response('El puesto se guardó correctamente.');
         } catch (\Throwable $th) {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
         }

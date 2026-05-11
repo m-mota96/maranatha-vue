@@ -22,6 +22,7 @@ class AppointmentServiceStaff extends Model
         'discounted_price',
         'start_time',
         'end_time',
+        'date',
         'created_by',
         'updated_by',
         'deleted_by'

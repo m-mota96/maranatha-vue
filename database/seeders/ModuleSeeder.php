@@ -168,7 +168,7 @@ class ModuleSeeder extends Seeder
 
         $modules[17] = [
             'module_id' => null,
-            'name' => 'Contabilidad',
+            'name' => 'Métricas',
             'target' => null,
             'icon' => 'fas, chart-line',
             'created_at' => date('Y-m-d H:i:s'),
@@ -196,16 +196,16 @@ class ModuleSeeder extends Seeder
         $modules[20] = [
             'module_id' => 18,
             'name' => 'Reportes',
-            'target' => null,
+            'target' => 'contabilidad_reportes',
             'icon' => null,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
         ];
 
         $modules[21] = [
-            'module_id' => 21,
-            'name' => 'Reporte de ventas',
-            'target' => 'contabilidad_reportes_ventas',
+            'module_id' => 11,
+            'name' => 'Proveedores',
+            'target' => 'operacion_proveedores',
             'icon' => null,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),

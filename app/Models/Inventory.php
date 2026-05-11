@@ -16,6 +16,7 @@ class Inventory extends Model
         'product_id',
         'reference_id',
         'sale_id',
+        'provider_id',
         'type',
         'quantity',
         'expiration_date',
@@ -39,6 +40,10 @@ class Inventory extends Model
 
     public function sale() {
         return $this->belongsTo(Sale::class);
+    }
+
+    public function provider() {
+        return $this->belongsTo(Provider::class);
     }
 
     public function createdBy() {

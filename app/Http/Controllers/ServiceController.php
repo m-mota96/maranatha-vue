@@ -19,8 +19,8 @@ class ServiceController extends Controller {
         }
 
         return Inertia::render('admin/Service', [
-            'module'      => $module,
-            'menu'        => Modules::modulesMenu()
+            'module' => $module,
+            'menu'   => Modules::modulesMenu()
         ]);
     }
 
@@ -111,7 +111,7 @@ class ServiceController extends Controller {
                 'require_staff'    => $service->require_staff,
                 'created_by'       => auth()->user()->id
             ]);
-            return Response::response('El servicio se guardo correctamente.');
+            return Response::response('El servicio se guardó correctamente.');
         } catch (\Throwable $th) {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
         }
@@ -131,7 +131,7 @@ class ServiceController extends Controller {
                 $service->service_type_id = $serviceType->id;
             }
 
-            $txt                       = 'modificó';
+            $txt                           = 'modificó';
             $findService                   = Service::find($service->id);
             $findService->service_type_id  = $service->service_type_id;
             $findService->name             = $service->name;

@@ -14,7 +14,7 @@ const showModal = async (id) => {
         return
     }
     sale.value     = response.data;
-    services.value = response.data.appointment_id ? response.data.appointment.services : response.data.services;
+    services.value = response.data.appointment_id ? response.data.appointment.services_staff : response.data.services;
     dialogVisible.value = true;
 }
 
@@ -34,13 +34,14 @@ defineExpose({
     <el-dialog
         v-model="dialogVisible"
         title="Resumen de venta"
-        width="50%"
+        width="70%"
         style="margin-top: 2% !important;"
     >
         <table class="w-100">
             <thead>
                 <tr>
                     <th class="!bg-blue-100 text-dark bold">Servicio/Producto</th>
+                    <th class="!bg-blue-100 text-dark bold">Staff</th>
                     <th class="!bg-blue-100 text-dark bold text-center">Precio</th>
                     <th class="!bg-blue-100 text-dark bold text-center">Cantidad</th>
                     <th class="!bg-blue-100 text-dark bold text-center">Importe</th>
@@ -51,14 +52,18 @@ defineExpose({
                     <td>
                         {{ s.name || s.service.name }} ({{ s.time || s.service.time }} min.)
                     </td>
+                    <td>
+                        <span v-if="s.staff">{{ s.staff.name }} {{ s.staff.first_name }} {{ s.staff.last_name }}</span>
+                        <span v-if="!s.staff">N/A</span>
+                    </td>
                     <td class="text-center">
-                        {{ formatCurrency(s.pivot?.price || s.price) }}
+                        {{ formatCurrency(s.price || s.service.price) }}
                     </td>
                     <td class="text-center">
                         1
                     </td>
                     <td class="text-center">
-                        {{ formatCurrency(s.pivot?.price || s.price) }}
+                        {{ formatCurrency(s.price || s.service.price) }}
                     </td>
                 </tr>
                 <tr v-for="i in sale.inventories" :key="i.id">
@@ -66,6 +71,9 @@ defineExpose({
                         <span v-if="i.product.brand"> {{ i.product.brand }}</span>
                         {{ i.product.name }}
                         <span v-if="i.product.content">{{ i.product.content }} {{ i.product.abreviation }}</span>
+                    </td>
+                    <td>
+                        N/A
                     </td>
                     <td class="text-center">
                         {{ formatCurrency(i.price) }}

@@ -21,12 +21,16 @@ const inventory     = ref({
     batch: '',
     product_cost: 0,
     description: '',
+    type_sale: 'pza',
+    provider_id: null,
+    provider: ''
 });
 const errors = ref({
     product: false,
     reference: false,
     quantity: false,
     type: false,
+    provider: false
 });
 
 const showModal = () => {
@@ -43,6 +47,8 @@ const showModal = () => {
     inventory.value.product_cost    = 0;
     inventory.value.description     = '';
     inventory.value.type_sale       = 'pza';
+    inventory.value.provider_id     = null;
+    inventory.value.provider        = '';
     dialogVisible.value = true;
 };
 
@@ -51,6 +57,7 @@ const resetErrors = () => {
     errors.value.reference = false;
     errors.value.quantity  = false;
     errors.value.type      = false;
+    errors.value.provider  = false;
 };
 
 const validate = () => {
@@ -71,6 +78,12 @@ const validate = () => {
     if (!inventory.value.type) {
         errors.value.type = true;
         valid             = false;
+    }
+    if (inventory.value.provider) {
+        if (!inventory.value.provider_id) {
+            errors.value.provider = true;
+            valid                 = false;
+        }
     }
     return valid;
 };
@@ -107,6 +120,23 @@ const querySearch = async (queryString, cb) => {
     cb(results);
 };
 
+const querySearchProvider = async (queryString, cb) => {
+    if (queryString.length < 3) {
+        cb([]);
+        return;
+    }
+
+    const response = await apiClient('admin/provider', 'GET', { name: queryString });
+    const results  = response.data
+    .filter(createFilterProvider(queryString))
+    .map(provider => ({
+        ...provider,
+        value: `${provider.name}${provider.seller ? ' - '+provider.seller : ''}`
+    }));
+
+    cb(results);
+};
+
 const createFilter = (queryString) => {
     const search = queryString.toLowerCase();
 
@@ -115,9 +145,22 @@ const createFilter = (queryString) => {
     };
 };
 
+const createFilterProvider = (queryString) => {
+    const search = queryString.toLowerCase();
+
+    return (provider) => {
+        return provider.name.toLowerCase().includes(search);
+    };
+};
+
 const handleSelect = (_product)=> {
     inventory.value.product_id = _product.id;
     inventory.value.type_sale  = _product.type_sale;
+};
+
+const handleSelectProvider = (_provider)=> {
+    inventory.value.provider_id = _provider.id;
+    inventory.value.provider    = _provider.name + ' - ' + _provider.seller;
 };
 
 defineExpose({
@@ -213,7 +256,23 @@ defineExpose({
                 />
             </el-col>
             <el-col :span="12" class="mb-3" v-if="inventory.type === 'input' && inventory.reference_id === 1">
-                <label for="product_cost" class="bold">¿Cuál fue el monto pagado por el producto?</label>
+                <label for="provider" class="bold">Proveedor</label>
+                <el-autocomplete
+                    v-model="inventory.provider"
+                    class="el-form-item"
+                    :class="{'is-error': errors.provider}"
+                    id="provider"
+                    :fetch-suggestions="querySearchProvider"
+                    :trigger-on-focus="false"
+                    clearable
+                    placeholder="Escribe el nombre del proveedor para buscar"
+                    @select="handleSelectProvider"
+                    @clear="inventory.provider_id = null"
+                />
+                <span class="text-danger fs-small" v-if="errors.provider">Debes elegir un proveedor de la lista de sugerencias.</span>
+            </el-col>
+            <el-col :span="12" class="mb-3" v-if="inventory.type === 'input' && inventory.reference_id === 1">
+                <label for="product_cost" class="bold">Costo del producto</label>
                 <el-input-number
                     v-model="inventory.product_cost"
                     class="el-form-item w-100"

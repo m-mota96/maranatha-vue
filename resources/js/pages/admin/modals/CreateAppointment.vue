@@ -751,8 +751,8 @@ defineExpose({
     </el-dialog>
     <CreateEditCustomer
         ref="createEditCustomerRef"
-        @update-customerName="form.customer_id = $event"
-        @update-customerId="form.customer = $event"
+        @update-customerId="form.customer_id = $event"
+        @update-customerName="form.customer = $event"
     />
 </template>
 

@@ -67,7 +67,7 @@ class CustomerController extends Controller {
                 'address'      => $request->address,
                 'created_by'   => auth()->user()->id
             ]);
-            return Response::response('El cliente se guardo correctamente.', $customer);
+            return Response::response('El cliente se guardó correctamente.', $customer);
         } catch (\Throwable $th) {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
         }
