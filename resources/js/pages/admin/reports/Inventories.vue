@@ -24,7 +24,7 @@ const options = ref({
     period: 1,
     year: new Date().getFullYear(),
     range: new Date().getMonth() + 1,
-    daily_report: false
+    canceled_sales: false
 });
 const errors = ref({
     range: false,
@@ -44,11 +44,11 @@ const textLabels = (period) => {
     }
 };
 
-const generateIncomeVsExpensesReport = async () => {
+const generateInventoriesReport = async () => {
     if (validate()) {
         loading.value   = true;
         txtButton.value = 'Generando reporte, por favor espera!!';
-        const response  = await apiClient('admin/reports/incomeVsExpenses', 'GET', options.value);
+        const response  = await apiClient('admin/reports/inventories', 'GET', options.value);
         loading.value   = false;
         txtButton.value = 'Generar reporte';
         if (response.error) {
@@ -61,11 +61,9 @@ const generateIncomeVsExpensesReport = async () => {
 };
 
 const handleChange = (_period) => {
-    options.value.range  = '';
-    const notDailyReport = [6, 12];
-    if (notDailyReport.includes(_period)) {
-        options.value.daily_report = false;
-    }
+    options.value.range        = '';
+    errors.value.range         = false;
+    errors.value.range_invalid = false;
 };
 
 const validate = () => {
@@ -154,7 +152,7 @@ const diferenceMonths = (startDate, endDate) => {
             v-if="options.period === 0"
             v-model="options.range"
             class="el-form-item w-100"
-            :class="{'is-error': errors.range}"
+            :class="{'is-error': errors.range || errors.range_invalid}"
             type="daterange"
             range-separator="A"
             start-placeholder="Fecha inicial"
@@ -166,16 +164,9 @@ const diferenceMonths = (startDate, endDate) => {
         <span class="text-danger fs-small" v-if="errors.range">Elige el {{ textLabels(options.period).toLocaleLowerCase() }}.</span>
         <span class="text-danger fs-small" v-if="errors.range_invalid">Rango excedido.</span>
     </el-col>
-    <el-col :span="6" class="mb-3" v-if="options.period !== 12 && options.period !== 6">
-        <label class="bold">¿Desglosar reporte por día?</label><br>
-        <el-radio-group v-model="options.daily_report">
-            <el-radio :value="false">No</el-radio>
-            <el-radio :value="true">Si</el-radio>
-        </el-radio-group>
-    </el-col>
     <el-col :span="6" class="mb-3">
         <br>
-        <el-button type="success" @click="generateIncomeVsExpensesReport" :loading="loading">
+        <el-button type="success" @click="generateInventoriesReport" :loading="loading">
             <font-awesome-icon class="me-2" :icon="['fas', 'file-excel']" />{{ txtButton }}
         </el-button>
     </el-col>

@@ -4,6 +4,7 @@ import Layout from './Layout.vue';
 import Sales from './reports/Sales.vue';
 import StaffCommissions from './reports/StaffCommissions.vue';
 import IncomeExpenses from './reports/IncomeExpenses.vue';
+import Inventories from './reports/Inventories.vue';
 
 const { module, menu } = defineProps({
     module: {
@@ -58,9 +59,10 @@ const options     = [
                         />
                     </el-select>
                 </el-col>
-                <Sales v-if="report_type === 'sales'" ref="salesReportRef" />
+                <Sales v-if="report_type === 'sales'" ref="salesRef" />
                 <StaffCommissions v-if="report_type === 'staffCommissions'" ref="staffCommissionsRef" />
                 <IncomeExpenses v-if="report_type === 'incomeVsExpenses'" ref="incomeVsExpensesRef" />
+                <Inventories v-if="report_type === 'inventory'" ref="inventoriesRef" />
             </el-row>
         </el-col>
     </Layout>

@@ -100,6 +100,7 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function() {
     Route::get('reports/sales', [ReportController::class, 'sales']);
     Route::get('reports/staffCommissions', [ReportController::class, 'staffCommissions']);
     Route::get('reports/incomeVsExpenses', [ReportController::class, 'incomeVsExpenses']);
+    Route::get('reports/inventories', [ReportController::class, 'inventories']);
     Route::get('providers', [ProviderController::class, 'getProviders']);
     Route::get('provider', [ProviderController::class, 'searchProvider']);
     Route::post('provider', [ProviderController::class, 'saveProvider']);

@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Http\Traits\Modules;
-use App\Http\Traits\IncomeExpensesReport;
+use App\Http\Traits\IncomeExpenseReport;
+use App\Http\Traits\InventoryReport;
 use App\Http\Traits\SaleReport;
 use App\Http\Traits\StaffCommissionReport;
 
 class ReportController extends Controller {
-    use IncomeExpensesReport;
+    use IncomeExpenseReport;
+    use InventoryReport;
     use SaleReport;
     use StaffCommissionReport;
 
