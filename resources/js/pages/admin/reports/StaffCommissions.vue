@@ -90,7 +90,6 @@ const handleCheckAll = (val) => {
 watch(
     ()    => options.value.staff,
     (val) => {
-        console.log(val.length, staff.value.length);
         if (val.length === 0) {
             checkAll.value      = false;
             indeterminate.value = false;

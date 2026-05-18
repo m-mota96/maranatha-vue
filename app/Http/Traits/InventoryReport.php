@@ -46,6 +46,16 @@ trait InventoryReport {
                 break;
         }
 
+        if ($request->product_type) {
+            $inventories->whereHas('product', function($q) use($request) {
+                $q->where('product_type_id', $request->product_type);
+            });
+        } else {
+            $inventories->whereHas('product', function($q) {
+                $q->whereIn('product_type_id', [1, 2]);
+            });
+        }
+
         return $inventories->count();
     }
 }

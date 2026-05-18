@@ -12,6 +12,7 @@ class Product extends Model
     use SoftDeletes;
     
     protected $fillable = [
+        'product_type_id',
         'name',
         'barcode',
         'brand',
@@ -30,5 +31,9 @@ class Product extends Model
 
     public function inventories() {
         return $this->hasMany(Inventory::class);
+    }
+
+    public function productType() {
+        return $this->belongsTo(ProductType::class);
     }
 }

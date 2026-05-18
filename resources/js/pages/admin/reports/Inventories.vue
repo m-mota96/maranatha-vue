@@ -24,7 +24,7 @@ const options = ref({
     period: 1,
     year: new Date().getFullYear(),
     range: new Date().getMonth() + 1,
-    canceled_sales: false
+    product_type: 0
 });
 const errors = ref({
     range: false,
@@ -163,6 +163,14 @@ const diferenceMonths = (startDate, endDate) => {
         <p v-if="options.period === 0" class="mb-0 text-center text-sm bold">&nbsp;&nbsp;&nbsp;Rango máximo de 3 meses.</p>
         <span class="text-danger fs-small" v-if="errors.range">Elige el {{ textLabels(options.period).toLocaleLowerCase() }}.</span>
         <span class="text-danger fs-small" v-if="errors.range_invalid">Rango excedido.</span>
+    </el-col>
+    <el-col :span="6" class="mb-3">
+        <label class="bold">¿Que clasificaciones quieres incluir?</label>
+        <el-radio-group v-model="options.product_type">
+            <el-radio :value="0">Productos e Insumos</el-radio>
+            <el-radio :value="1">Productos</el-radio>
+            <el-radio :value="2">Insumos</el-radio>
+        </el-radio-group>
     </el-col>
     <el-col :span="6" class="mb-3">
         <br>

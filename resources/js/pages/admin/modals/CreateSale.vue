@@ -511,7 +511,7 @@ defineExpose({
                                     clearable
                                     :filterable="true"
                                 >
-                                    <el-option v-for="serv in allServices" :key="serv.id" :value="serv.id" :label="serv.name" />
+                                    <el-option v-for="serv in allServices" :key="serv.id" :value="serv.id" :label="`${serv.name} (${serv.time} min.)`" />
                                 </el-select>
                                 <el-autocomplete
                                     v-if="s.newRecord && s.type === 'Producto'"

@@ -9,6 +9,7 @@ use App\Http\Traits\Modules;
 use App\Http\Traits\Response;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\ProductType;
 
 class ProductController extends Controller {
     public function products() {
@@ -21,6 +22,7 @@ class ProductController extends Controller {
         return Inertia::render('admin/Product', [
             'module'      => $module,
             'menu'        => Modules::modulesMenu(),
+            'productType' => ProductType::where('status', true)->get()
         ]);
     }
 
@@ -39,7 +41,7 @@ class ProductController extends Controller {
 
             $orderDir = strtolower($order['order'] ?? '') === 'asc' ? 'asc' : 'desc';
 
-            $query = Product::select('*')
+            $query = Product::with(['productType:id,type'])->select('*')
             ->selectRaw('
                 (SELECT IFNULL(SUM(quantity), 0) FROM inventories WHERE product_id = products.id AND type = "input") - 
                 (SELECT IFNULL(SUM(quantity), 0) FROM inventories 
@@ -61,6 +63,8 @@ class ProductController extends Controller {
             
             if (isset($search['status'])) $query->where('status', $search['status']);
             
+            if (isset($search['productType'])) $query->whereIn('product_type_id', $search['productType']);
+            
             $products  = $query->orderBy($orderBy, $orderDir)->paginate($limit, ['*'], 'page', $pagination['currentPage']);
             return Response::response(null, ['products' => $products->items(), 'totalRows' => $products->total()]);
         } catch (\Throwable $th) {
@@ -70,10 +74,13 @@ class ProductController extends Controller {
 
     public function searchProduct(Request $request) {
         try {
-            $products = Product::select('id', 'name', 'price', 'brand', 'content', 'abreviation', 'type_sale')
+            $query = Product::select('id', 'name', 'price', 'brand', 'content', 'abreviation', 'type_sale')
             ->where('status', true)
-            ->whereLike('name', '%'.$request->name.'%')
-            ->get();
+            ->whereLike('name', '%'.$request->name.'%');
+
+            if (!isset($request->type)) $query->whereNotIn('product_type_id', [2]);
+            
+            $products = $query->get();
             return Response::response(null, $products);
         } catch (\Throwable $th) {
             return Response::response('Lo sentimos ocurrio un error.<br>Si el problema persiste contacta a soporte.', 'Ocurrio un error '.$th->getMessage(), true, 500);
@@ -87,6 +94,7 @@ class ProductController extends Controller {
                 return Response::response('El código de barras ingresado ya esta en tus registros.<br>Por favor verifica la información.', null, true, 409);
             }
             Product::create([
+                'product_type_id'  => $request->product_type_id,
                 'name'             => $request->name,
                 'barcode'          => $request->barcode,
                 'brand'            => $request->brand,
@@ -113,6 +121,7 @@ class ProductController extends Controller {
             }
             $txt                       = 'modificó';
             $product                   = Product::find($request->id);
+            $product->product_type_id  = $request->product_type_id;
             $product->name             = $request->name;
             $product->barcode          = $request->barcode;
             $product->brand            = $request->brand;

@@ -29,7 +29,8 @@ class DatabaseSeeder extends Seeder
             AppointmentStatusSeeder::class,
             ReferenceSeeder::class,
             PaymentMethodSeeder::class,
-            StatusSaleSeeder::class
+            StatusSaleSeeder::class,
+            ProductTypeSeeder::class
         ]);
     }
 }

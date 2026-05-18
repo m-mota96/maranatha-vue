@@ -107,14 +107,12 @@ const querySearch = async (queryString, cb) => {
         return;
     }
 
-    const response = await apiClient('admin/product', 'GET', { name: queryString });
+    const response = await apiClient('admin/product', 'GET', { name: queryString, type: 'inventory' });
     const results  = response.data
     .filter(createFilter(queryString))
     .map(product => ({
         ...product,
-        value: `
-            ${product.name} ${product.content ? product.content : ''} ${product.abreviation ? product.abreviation : ''} ${product.brand ? '('+product.brand+')' : ''}
-        `
+        value: `${product.name}${product.content ? ' '+product.content : ''}${product.abreviation ? ' '+product.abreviation : ''}${product.brand ? ' ('+product.brand+')' : ''}`
     }));
 
     cb(results);
@@ -163,6 +161,18 @@ const handleSelectProvider = (_provider)=> {
     inventory.value.provider    = _provider.name + ' - ' + _provider.seller;
 };
 
+const changeReference = (_reference) => {
+    inventory.value.type            = '';
+    inventory.value.product_cost    = 0;
+    inventory.value.batch           = '';
+    inventory.value.expiration_date = '';
+    inventory.value.provider_id     = null;
+    inventory.value.provider        = '';
+    if (_reference === 1) {
+        inventory.value.type = 'input';
+    }
+};
+
 defineExpose({
     showModal
 });
@@ -200,6 +210,7 @@ defineExpose({
                     :class="{'is-error': errors.reference}"
                     id="reference"
                     placeholder="Elige una opción"
+                    @change="(val) => changeReference(val)"
                     clearable
                 >
                     <el-option v-for="r in references" :key="r.id" :label="r.name" :value="r.id" />
@@ -234,15 +245,15 @@ defineExpose({
                 <label for="type" class="bold">Tipo de movimiento <span class="text-danger">*</span></label><br>
                 <el-radio-group v-model="inventory.type">
                     <el-radio value="input">Ingreso</el-radio>
-                    <el-radio value="output">Egreso</el-radio>
+                    <el-radio value="output" :disabled="inventory.reference_id === 1">Egreso</el-radio>
                 </el-radio-group>
                 <p class="text-danger fs-small mb-0" v-if="errors.type">Marca una de las opciones.</p>
             </el-col>
-            <el-col :span="12" class="mb-3">
+            <el-col :span="12" class="mb-3" v-if="inventory.reference_id === 1 && inventory.type === 'input'">
                 <label for="batch" class="bold">Lote</label>
                 <el-input v-model="inventory.batch" id="batch" clearable />
             </el-col>
-            <el-col :span="12" class="mb-3">
+            <el-col :span="12" class="mb-3" v-if="inventory.reference_id === 1 && inventory.type === 'input'">
                 <label for="expiration_date" class="bold">Fecha de caducidad</label>
                 <el-date-picker
                     style="width: 100%;"

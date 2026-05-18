@@ -26,6 +26,7 @@ class InventoriesExport implements FromCollection, WithHeadings, WithColumnWidth
 
     public function headings(): array {
         return [
+            'Clasificación',
             'Producto',
             'Tipo de movimiento',
             'Referencia',
@@ -41,16 +42,17 @@ class InventoriesExport implements FromCollection, WithHeadings, WithColumnWidth
 
     public function columnWidths(): array {
         return [
-            'A' => 50,
-            'B' => 25,            
-            'C' => 35,            
-            'D' => 35,
-            'E' => 15,
-            'F' => 20,
-            'G' => 15,
-            'H' => 25,
+            'A' => 15,
+            'B' => 50,
+            'C' => 25,            
+            'D' => 35,            
+            'E' => 35,
+            'F' => 15,
+            'G' => 20,
+            'H' => 15,
             'I' => 25,
-            'J' => 50
+            'J' => 25,
+            'K' => 50
         ];
     }
 
@@ -59,9 +61,10 @@ class InventoriesExport implements FromCollection, WithHeadings, WithColumnWidth
         ->selectRaw('IF(expiration_date IS NOT NULL, DATE_FORMAT(expiration_date, "%d/%m/%Y"), "") AS expiration_date')
         ->selectRaw('DATE_FORMAT(created_at, "%d/%m/%Y") AS created_date')
         ->with([
-            'product:id,name,content,abreviation,type_sale',
+            'product:id,product_type_id,name,content,abreviation,type_sale',
             'reference:id,name',
-            'provider:id,name,seller'
+            'provider:id,name,seller',
+            'product.productType:id,type'
         ])
         ->whereIn('reference_id', [1, 2]);
 
@@ -81,6 +84,17 @@ class InventoriesExport implements FromCollection, WithHeadings, WithColumnWidth
                 $inventories->whereBetween('created_at', [$this->options->range[0].' 00:00:00', $this->options->range[1].' 23:59:59']);
                 break;
         }
+
+        if ($this->options->product_type) {
+            $inventories->whereHas('product', function($q) {
+                $q->where('product_type_id', $this->options->product_type);
+            });
+        } else {
+            $inventories->whereHas('product', function($q) {
+                $q->whereIn('product_type_id', [1, 2]);
+            });
+        }
+
         $data = $inventories->get();
         // dd($data);
         return $data;
@@ -91,6 +105,7 @@ class InventoriesExport implements FromCollection, WithHeadings, WithColumnWidth
         $provider = $inventory->provider ? $inventory->provider->name.($inventory->provider->seller ? ' - '.$inventory->provider->seller : '') : '';
 
         return [
+            $inventory->product->productType->type,
             $product,
             $inventory->type === 'input' ? 'Ingreso' : 'Egreso',
             $inventory->reference->name,
@@ -111,7 +126,7 @@ class InventoriesExport implements FromCollection, WithHeadings, WithColumnWidth
             ],
         ]);
         // Estilos para la fila 1
-        $sheet->getStyle('A1:J1')->applyFromArray([
+        $sheet->getStyle('A1:K1')->applyFromArray([
             'font' => [
                 'bold'  => true,
                 'color' => ['rgb' => '000000'],
@@ -129,7 +144,7 @@ class InventoriesExport implements FromCollection, WithHeadings, WithColumnWidth
 
     public function columnFormats(): array {
         return [
-            'F' => '"$"#,##0.00',
+            'G' => '"$"#,##0.00',
         ];
     }
 }

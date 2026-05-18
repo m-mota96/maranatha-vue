@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use App\Http\Traits\Modules;
 use App\Http\Traits\Response;
 use App\Models\Inventory;
+use App\Models\ProductType;
 use App\Models\Reference;
 
 class InventoryController extends Controller {
@@ -21,7 +22,8 @@ class InventoryController extends Controller {
         return Inertia::render('admin/Inventory', [
             'module'      => $module,
             'menu'        => Modules::modulesMenu(),
-            'references'  => Reference::where('id', '<>', 3)->orderBy('name')->get()
+            'references'  => Reference::where('id', '<>', 3)->orderBy('name')->get(),
+            'productType' => ProductType::where('status', true)->get()
         ]);
     }
 
@@ -41,9 +43,10 @@ class InventoryController extends Controller {
             $orderDir = strtolower($order['order'] ?? '') === 'asc' ? 'asc' : 'desc';
 
             $query = Inventory::with([
-                'product:id,name,content,abreviation,brand,type_sale',
+                'product:id,product_type_id,name,content,abreviation,brand,type_sale',
                 'reference',
-                'provider:id,name,seller'
+                'provider:id,name,seller',
+                'product.productType:id,type'
             ])->whereNotIn('reference_id', [3]);
             
             if (!empty($search['product_name'])) {
@@ -59,6 +62,12 @@ class InventoryController extends Controller {
             if (!empty($search['product_cost'])) $query->whereLike('product_cost', '%'.$search['product_cost'].'%');
 
             if (!empty($search['dates'])) $query->whereBetween('created_at', [$search['dates'][0], $search['dates'][1]]);
+
+            if (isset($search['productType'])) {
+                $query->whereHas('product', function($q) use($search) {
+                    $q->whereIn('product_type_id', $search['productType']);
+                });
+            }
             
             $inventories = $query->orderBy($orderBy, $orderDir)->paginate($limit, ['*'], 'page', $pagination['currentPage']);
             return Response::response(null, ['inventories' => $inventories->items(), 'totalRows' => $inventories->total()]);

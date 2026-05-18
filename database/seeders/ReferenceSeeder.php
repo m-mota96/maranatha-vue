@@ -25,6 +25,10 @@ class ReferenceSeeder extends Seeder
             'name' => 'Venta de producto'
         ];
 
+        $data[3] = [
+            'name' => 'Consumo interno de producto'
+        ];
+
         Reference::insert($data);
     }
 }

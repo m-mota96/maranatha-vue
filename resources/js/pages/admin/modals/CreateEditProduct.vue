@@ -3,8 +3,9 @@ import apiClient from '@/apiClient';
 import { showNotification } from '@/notification';
 import { ref, defineExpose } from 'vue';
 
-const { getParentProducts } = defineProps({
-    getParentProducts: Function
+const { getParentProducts, productType } = defineProps({
+    getParentProducts: Function,
+    productType: Array
 });
 
 const title         = ref('');
@@ -12,6 +13,7 @@ const button        = ref('');
 const dialogVisible = ref(false);
 const product       = ref({
     id: null,
+    product_type_id: 1,
     name: '',
     barcode: '',
     brand: '',
@@ -39,6 +41,7 @@ const showModal = (_product) => {
     title.value                    = 'Crear nuevo producto';
     button.value                   = 'Guardar';
     product.value.id               = null;
+    product.value.product_type_id  = 1;
     product.value.name             = '';
     product.value.barcode          = '';
     product.value.brand            = '';
@@ -53,6 +56,7 @@ const showModal = (_product) => {
         title.value                    = 'Editar producto';
         button.value                   = 'Guardar cambios';
         product.value.id               = _product.id;
+        product.value.product_type_id  = _product.product_type_id;
         product.value.name             = _product.name;
         product.value.barcode          = _product.barcode;
         product.value.brand            = _product.brand;
@@ -86,11 +90,11 @@ const validate = () => {
         errors.value.barcode = true;
         valid                = false;
     }
-    if (!product.value.price) {
+    if (!product.value.price && product.value.product_type_id !== 2) {
         errors.value.price = true;
         valid              = false;
     }
-    if (!product.value.type_sale) {
+    if (!product.value.type_sale && product.value.product_type_id !== 2) {
         errors.value.type_sale = true;
         valid                  = false;
     }
@@ -118,6 +122,15 @@ const saveProduct = async () => {
     }
 };
 
+const handleChange = (product_type) => {
+    product.value.price            = '';
+    product.value.discounted_price = '';
+    product.value.type_sale        = '';
+    if (product_type === 2) {
+        product.value.type_sale = 'pza';
+    }
+};
+
 defineExpose({
     showModal
 });
@@ -132,6 +145,28 @@ defineExpose({
     >
         <el-row :gutter="30">
             <el-col :span="12" class="mb-3">
+                <label for="barcode" class="bold">
+                    Clasificación 
+                    <el-tooltip
+                        class="box-item"
+                        effect="customized"
+                        content="<b>Producto:</b> se puede vender a los clientes.<br><b>Insumo:</b> son productos que se usan internamente en tu negocio pero no se venden a clientes."
+                        raw-content
+                        placement="right"
+                    >
+                        <font-awesome-icon class="text-purple-500 text-base" :icon="['fas', 'question-circle']" />
+                    </el-tooltip>
+                </label>
+                <el-select v-model="product.product_type_id" class="el-form-item w-100" placeholder="Elige una opción" @change="(val) => handleChange(val)">
+                    <el-option
+                    v-for="item in productType"
+                    :key="item.id"
+                    :label="item.type"
+                    :value="item.id"
+                    />
+                </el-select>
+            </el-col>
+            <el-col :span="12" class="mb-3">
                 <label for="barcode" class="bold">Código de barras/clave <span class="text-danger">*</span></label>
                 <el-input v-model="product.barcode" class="el-form-item" :class="{'is-error': errors.barcode}" id="barcode" clearable />
                 <span class="text-danger fs-small" v-if="errors.barcode">El código de barras/clave es obligatorio/a.</span>
@@ -141,7 +176,7 @@ defineExpose({
                 <el-input v-model="product.name" class="el-form-item" :class="{'is-error': errors.name}" id="name" clearable />
                 <span class="text-danger fs-small" v-if="errors.name">El nombre es obligatorio.</span>
             </el-col>
-            <el-col :span="12" class="mb-3">
+            <el-col :span="12" class="mb-3" v-if="product.product_type_id === 1">
                 <label for="price" class="bold">Precio <span class="text-danger">*</span></label>
                 <el-input-number
                     v-model="product.price"
@@ -158,7 +193,7 @@ defineExpose({
                 </el-input-number>
                 <span class="text-danger fs-small" v-if="errors.price">El precio es obligatorio.</span>
             </el-col>
-            <el-col :span="12" class="mb-3">
+            <el-col :span="12" class="mb-3" v-if="product.product_type_id === 1">
                 <label for="discounted_price" class="bold">Precio con descuento</label>
                 <el-input-number
                     v-model="product.discounted_price"
@@ -173,7 +208,7 @@ defineExpose({
                     <template #prefix>$</template>
                 </el-input-number>
             </el-col>
-            <el-col :span="12" class="mb-3">
+            <el-col :span="12" class="mb-3" v-if="product.product_type_id === 1">
                 <label for="type_sale" class="bold">¿Como se vende el producto? <span class="text-danger">*</span></label>
                 <el-radio-group v-model="product.type_sale">
                     <el-radio value="pza">Por pieza</el-radio>

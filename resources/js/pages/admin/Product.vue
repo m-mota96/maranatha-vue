@@ -1,11 +1,11 @@
 <script lang="js" setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import Layout from './Layout.vue';
 import apiClient from '@/apiClient';
 import { showNotification } from '@/notification';
 import CreateEditProduct from './modals/CreateEditProduct.vue';
 
-const { module, menu } = defineProps({
+const { module, menu, productType } = defineProps({
     module: {
         type: Object,
         required: true
@@ -13,6 +13,10 @@ const { module, menu } = defineProps({
     menu: {
         type: Array,
         required: true
+    },
+    productType: {
+        type: Array,
+        required: false
     }
 });
 
@@ -28,14 +32,23 @@ const search = ref({
     brand:'',
     price: '',
     discounted_price: '',
-    status: ''
+    status: '',
+    productType: []
 });
 const order = ref({
     orderBy: 'created_at',
     order: 'DESC'
 });
+const productTypes  = ref([]);
+const checkAll      = ref(false);
+const indeterminate = ref(false);
 
 onMounted(() => {
+    productTypes.value = productType.map(pt => ({
+        value: pt.id,
+        label: pt.type
+    }));
+    search.value.productType = productType.map(pt => (pt.id));
     getProducts();
 });
 
@@ -99,8 +112,10 @@ const handleCurrentChange = (val) => {
 };
 
 const tableRowClassName = ({row}) => {
+    if (!row.stock) {
+        return '';
+    }
     const available = row.type_sale === 'pza' ? parseInt(row.available) : parseFloat(row.available);
-    console.log(row.stock, available);
     if (available <= 0) {
         return '!bg-red-200';
     } else if (available <= row.stock) {
@@ -108,6 +123,30 @@ const tableRowClassName = ({row}) => {
     }
     return '!bg-green-100';
 };
+
+const handleCheckAll = (val) => {
+    indeterminate.value = false
+    if (val) {
+        search.value.productType = productTypes.value.map((_) => _.value);
+    } else {
+        search.value.productType = [];
+    }
+};
+
+watch(
+    ()    => search.value.productType,
+    (val) => {
+        if (val.length === 0) {
+            checkAll.value      = false;
+            indeterminate.value = false;
+        } else if (val.length === productTypes.value.length) {
+            checkAll.value      = true;
+            indeterminate.value = false;
+        } else {
+            indeterminate.value = true;
+        }
+    }
+);
 </script>
 
 <template>
@@ -154,6 +193,31 @@ const tableRowClassName = ({row}) => {
                 :row-class-name="tableRowClassName"
             >
                 <el-table-column prop="id" label="#" class-name="text-dark" width="70" align="center" />
+                <el-table-column prop="product_type.type" min-width="100">
+                    <template #header>
+                        <el-select-v2
+                            v-model="search.productType"
+                            class="el-form-item"
+                            :options="productTypes"
+                            multiple
+                            collapse-tags
+                            placeholder="Clasificación"
+                            popper-class="custom-header"
+                            :max-collapse-tags="1"
+                            @change="getProducts"
+                        >
+                            <template #header>
+                            <el-checkbox
+                                v-model="checkAll"
+                                :indeterminate="indeterminate"
+                                @change="handleCheckAll"
+                            >
+                                Seleccionar todo
+                            </el-checkbox>
+                            </template>
+                        </el-select-v2>
+                    </template>
+                </el-table-column>
                 <el-table-column prop="barcode" label="Código de barras" class-name="text-dark" />
                 <el-table-column class-name="text-dark">
                     <template #header>
@@ -271,7 +335,7 @@ const tableRowClassName = ({row}) => {
             />
         </el-col>
     </Layout>
-    <CreateEditProduct ref="createEditProductRef" :get-parent-products="getProducts" />
+    <CreateEditProduct ref="createEditProductRef" :get-parent-products="getProducts" :productType="productType" />
 </template>
 
 <style scoped>

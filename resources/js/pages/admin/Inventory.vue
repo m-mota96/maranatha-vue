@@ -1,5 +1,5 @@
 <script lang="js" setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import Layout from './Layout.vue';
 import apiClient from '@/apiClient';
 import { showNotification } from '@/notification';
@@ -7,7 +7,7 @@ import CreateInventory from './modals/CreateInventory.vue';
 import { dateEs } from '@/dateEs';
 import { format as formatDates } from 'date-fns';
 
-const { module, menu, references } = defineProps({
+const { module, menu, references, productType } = defineProps({
     module: {
         type: Object,
         required: true
@@ -19,6 +19,10 @@ const { module, menu, references } = defineProps({
     references: {
         type: Array,
         required: true
+    },
+    productType: {
+        type: Array,
+        required: false
     }
 });
 
@@ -34,14 +38,23 @@ const search = ref({
     type: '',
     reference_id: '',
     product_cost: '',
-    dates: []
+    dates: [],
+    productType: []
 });
 const order = ref({
     orderBy: 'created_at',
     order: 'DESC'
 });
+const productTypes  = ref([]);
+const checkAll      = ref(false);
+const indeterminate = ref(false);
 
 onMounted(() => {
+    productTypes.value = productType.map(pt => ({
+        value: pt.id,
+        label: pt.type
+    }));
+    search.value.productType = productType.map(pt => (pt.id));
     setDates();
     getInventory();
 });
@@ -144,6 +157,30 @@ const calculateDiference = (startDate, endDate) => {
     // Retornamos 0 si la fecha final es anterior a la inicial
     return months <= 0 ? 0 : months;
 };
+
+const handleCheckAll = (val) => {
+    indeterminate.value = false
+    if (val) {
+        search.value.productType = productTypes.value.map((_) => _.value);
+    } else {
+        search.value.productType = [];
+    }
+};
+
+watch(
+    ()    => search.value.productType,
+    (val) => {
+        if (val.length === 0) {
+            checkAll.value      = false;
+            indeterminate.value = false;
+        } else if (val.length === productTypes.value.length) {
+            checkAll.value      = true;
+            indeterminate.value = false;
+        } else {
+            indeterminate.value = true;
+        }
+    }
+);
 </script>
 
 <template>
@@ -194,6 +231,31 @@ const calculateDiference = (startDate, endDate) => {
         <el-col :span="24" class="table-wrapper">
             <el-table :data="inventories" stripe empty-text="Ningún dato disponible en esta tabla" header-cell-class-name="text-dark bold">
                 <el-table-column prop="id" label="#" width="70" align="center" />
+                <el-table-column prop="product.product_type.type" min-width="110">
+                    <template #header>
+                        <el-select-v2
+                            v-model="search.productType"
+                            class="el-form-item"
+                            :options="productTypes"
+                            multiple
+                            collapse-tags
+                            placeholder="Clasificación"
+                            popper-class="custom-header"
+                            :max-collapse-tags="1"
+                            @change="getInventory"
+                        >
+                            <template #header>
+                            <el-checkbox
+                                v-model="checkAll"
+                                :indeterminate="indeterminate"
+                                @change="handleCheckAll"
+                            >
+                                Seleccionar todo
+                            </el-checkbox>
+                            </template>
+                        </el-select-v2>
+                    </template>
+                </el-table-column>
                 <el-table-column>
                     <template #header>
                         <el-input placeholder="Producto" title="Escribe para buscar" v-model="search.product_name" @input="getInventory" clearable />
@@ -256,13 +318,20 @@ const calculateDiference = (startDate, endDate) => {
                         {{ viewHorary(scope.row.created_at) }}
                     </template>
                 </el-table-column>
-                <el-table-column width="80" align="center">
+                <el-table-column align="center">
                     <template #header>
-                        <el-tooltip content="Nuevo registro" effect="customized" placement="top">
-                            <el-button class="btn-success" @click="openModal()">
-                                <font-awesome-icon :icon="['fas', 'plus']" />
-                            </el-button>
-                        </el-tooltip>
+                        <el-button-group>
+                            <el-tooltip content="Nuevo registro" effect="customized" placement="top">
+                                <el-button class="btn-success" @click="openModal()">
+                                    <font-awesome-icon :icon="['fas', 'plus']" />
+                                </el-button>
+                            </el-tooltip>
+                            <el-tooltip content="Registrar consumo interno" effect="customized" placement="top">
+                                <el-button type="primary" @click="openModal()">
+                                    <font-awesome-icon :icon="['fas', 'cart-arrow-down']" />
+                                </el-button>
+                            </el-tooltip>
+                        </el-button-group>
                     </template>
                     <template #default="scope">
                         <el-button-group>
